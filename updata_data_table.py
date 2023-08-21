@@ -21,6 +21,12 @@ def main(new_data_file):
     current_data = Table.read('all_enrollments.csv', format='ascii.csv')
 
     new_data = Table.read(new_data_file, format='ascii.csv')
+    try:
+        new_data.rename_column('Enrolled:', 'Enrolled')
+        new_data.rename_column('Cr/Hr', 'Crds')
+    except KeyError:
+        pass
+
     add_index_col(new_data)
     add_index_col(current_data)
 

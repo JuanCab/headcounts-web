@@ -70,7 +70,7 @@ def main(new_data_file):
                                    'Tuition -nonresident',
                                    'Approximate Course Fees']
     for tuition in potentially_missing_tuition:
-        if new_data[tuition].dtype == np.int:
+        if new_data[tuition].dtype == int:
             # Apparently there was no price data, so set it to zero.
             zs = ['$0.00' for _ in range(len(new_data))]
             c = Column(data=zs, name=tuition)

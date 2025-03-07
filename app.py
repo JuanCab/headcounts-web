@@ -68,7 +68,7 @@ def filled_credits(credit_column, variable_credits=1):
     crds = credit_column.copy()
     crds.mask[vari_rows] = True
     crds.fill_value = variable_credits
-    crds = np.round(crds.filled().astype(np.float)).astype(np.int)
+    crds = np.round(crds.filled().astype(float)).astype(int)
     return crds
 
 

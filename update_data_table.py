@@ -137,10 +137,11 @@ def main(new_data_file):
 
     # Check for missing tuition values in the new data and set it to 
     # zero if it is an integer type.
-    potentially_missing_tuition = ['Tuition -resident',
+    tuition_cols = ['Tuition -resident',
                                    'Tuition -nonresident',
-                                   'Approximate Course Fees']
-    for tuition in potentially_missing_tuition:
+                                   'Approximate Course Fees',
+                                   'Book Cost']
+    for tuition in tuition_cols:
         # Check for null values in the tuition column and replace with 
         # $0.00
         result_df = result_df.with_columns(
@@ -149,9 +150,37 @@ def main(new_data_file):
             .otherwise(pl.col(tuition))
             .alias(tuition)
         )
-        
+        # Check for all "n/a" values in the tuition column and replace with 
+        # $0.00
+        result_df = result_df.with_columns(
+            pl.when(pl.col(tuition).str.to_lowercase() == 'n/a')
+            .then(pl.lit("$0.00"))
+            .otherwise(pl.col(tuition))
+            .alias(tuition)
+        )
+
     # # Save the updated dataframe to the CSV file
     result_df.write_csv(COMPOSITE_CSV)
+
+    # Convert all the tuition columns from dollar strings to floats
+    for col in tuition_cols:
+        if col in result_df.columns:
+            result_df = result_df.with_columns(
+                pl.col(col).str.replace_all(r'[$,]', '').cast(float)
+            )
+
+    # Convert 'timestamp' column which is unix timestamp into a datetime
+    # in ISO format
+    if 'timestamp' in result_df.columns:
+        # Convert unix timestamp to datetime (in naive UTC)
+        result_df = result_df.with_columns(
+            pl.from_epoch(pl.col('timestamp'), time_unit="s").alias('timestamp')
+        )
+        # Make sure it is in the central time zone
+        result_df = result_df.with_columns(
+            (pl.col("timestamp").dt.convert_time_zone("America/Chicago")
+             .alias("timestamp"))
+        )
 
     # Save the updated dataframe to a Parquet file
     parquet_file = COMPOSITE_CSV.replace('.csv', '.parquet')
@@ -174,4 +203,5 @@ if __name__ == '__main__':
 
     # Print some feedback
     print(f"Data updated successfully. {len(result_df)} total rows in the dataset.")
-    print(result_df.head())
+    print("The last 5 rows of the updated dataset:")
+    print(result_df.tail())

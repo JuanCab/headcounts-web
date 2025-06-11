@@ -182,7 +182,12 @@ def main(new_data_file):
              .alias("timestamp"))
         )
 
+    #
     # Save the updated dataframe to a Parquet file
+    #
+    # Rename the "Size:" column to "Size" to match the current data format
+    result_df = result_df.rename({'Size:': 'Size'})
+    # Dump the parquet file
     parquet_file = COMPOSITE_CSV.replace('.csv', '.parquet')
     result_df.write_parquet(parquet_file)
     print(f"Updated data saved to {COMPOSITE_CSV} and {parquet_file}")
@@ -205,3 +210,5 @@ if __name__ == '__main__':
     print(f"Data updated successfully. {len(result_df)} total rows in the dataset.")
     print("The last 5 rows of the updated dataset:")
     print(result_df.tail())
+    print("with columns:")
+    print(result_df.columns)

@@ -10,14 +10,20 @@ from astropy.table import Table, Column
 
 from flask_bootstrap import Bootstrap
 
+# Set up the Flask application to allow URLs that end in slash to be
+# treated the same as those that do not.
 app = Flask(__name__)
+app.url_map.strict_slashes = False
 
 bootstrap = Bootstrap(app)
 
 app.logger.addHandler(logging.StreamHandler(sys.stdout))
 app.logger.setLevel(logging.ERROR)
 
-table = Table.read('all_enrollments.csv', format='ascii.csv')
+# Read the CSV file containing course enrollment data, used masked=True
+# to allow for masking of missing values.
+table_orig = Table.read('all_enrollments.csv', format='ascii.csv')
+table = Table(table_orig, masked=True)
 
 avg_time = int(table['timestamp'].mean())
 timestamp = datetime.datetime.fromtimestamp(avg_time)

@@ -1,16 +1,14 @@
-import os
+from pathlib import Path
 import logging
-import sys
 import re
 
-import numpy as np
-from astropy.table import Table, Column
+import polars as pl
 
 from flask import Flask, render_template, request, send_from_directory
 from flask_bootstrap import Bootstrap
 
-from config import CACHE_DIR
-from utils import parse_year_term, match_subject, common_response
+from config import CACHE_DIR, DATA_FILE
+from utils import filter_subject, common_response
 
 # Set up the Flask application to allow URLs that end in slash to be
 # treated the same as those that do not.
@@ -25,25 +23,6 @@ bootstrap = Bootstrap(app)
 # non-error messages
 app.logger.addHandler(logging.StreamHandler(sys.stdout))
 app.logger.setLevel(logging.ERROR)
-
-# Read the CSV file containing course enrollment data, used masked=True
-# to allow for masking of missing values.
-table_orig = Table.read('all_enrollments.csv', format='ascii.csv')
-table = Table(table_orig, masked=True)
-table.sort(['year_term', 'Subj', '#'])
-
-# Attempt to create the cache directory if it does not already exist
-# otherwise, ignore the error if it already exists
-try:
-    os.mkdir(CACHE_DIR)
-except OSError:
-    pass
-
-# Compute and add a human-readable year-term column to astropy Table
-human_yrtr = [parse_year_term(str(yrtr)) for yrtr in table['year_term']]
-human_yrtr = Column(data=human_yrtr, name='Term')
-table.add_column(human_yrtr, index=0)
-
 
 # Define the route for the root URL of the application This route serves
 # the instructions page when the user accesses the root URL It renders
@@ -67,32 +46,70 @@ def subtable_spec(subject, spec1=None, spec2=None):
     # to avoid processing requests for the favicon
     if subject == 'favicon.ico':
         return ''
-    render_me = match_subject(subject, table)
-    specs = [spec1, spec2]
-    specs = [s for s in specs if s is not None]
-    if not specs and subject != 'all':
-        terms = sorted(set(render_me['year_term']))
-        most_recent = terms[-1]
-        keep = render_me['year_term'] == most_recent
-        render_me = render_me[keep]
-    else:
-        for spec in specs:
-            if spec != 'all':
-                if len(spec) == 5 and spec[-1] in ['1', '3', '5']:
-                    # spec probably a year/term, filter by it:
-                    keep = render_me['year_term'] == int(spec)
-                elif (re.match('[a-z]{2,4}', spec.lower()) and
-                      spec.lower() not in ['lasc', 'wi']):
-                    # spec is probably a course rubric, filter by it:
-                    keep = render_me['Subj'] == spec.upper()
-                else:
-                    # Assume it was a course number or LASC area
-                    if subject == 'lasc':
-                        keep = np.array([spec in l for l in render_me['LASC/WI']])
-                    else:
-                        keep = render_me['#'] == str(spec)
 
-                render_me = render_me[keep]
+    # Read the Parquet file containing course enrollment data as a lazy
+    # Polars DataFrame. This allows for efficient querying without loading
+    # the entire dataset into memory at once.
+    table = pl.read_parquet(DATA_FILE).lazy()
+
+    # Crate a directory for cached CSV files if it does not already exist.
+    Path(CACHE_DIR).mkdir(parents=True, exist_ok=True)
+
+    # Get a filtered version of the lazy DataFrame based on the subject
+    # (including LASC, WI, or all courses).
+    subject = subject.lower()
+    filtered_table = filter_subject(subject, table)
+
+    # Collect the specifiers (spec1 and spec2) into a list (lowercased)
+    specs = [spec1, spec2]
+    # If spec1 or spec2 is 'all', replace it with None to simplify filtering.
+    specs = [s.lower() if s.lower() != 'all' else None for s in specs]
+    # Now filter out any None values from the specs list.
+    specs = [s for s in specs if s is not None]
+    # If no specific specs are provided and the subject is not 'all',
+    # filter to only include the most recent year/term.
+    if not specs and subject != 'all':
+        # Identify the most recent year/term in the dataset.
+        most_recent = ( filtered_table.select(pl.col("Fiscal yrtr").max())
+                 .collect()
+                 .item()
+                 )
+        # Filter the DataFrame to include only rows with the most recent
+        # year/term.
+        filtered_table = filtered_table.filter(
+            pl.col("Fiscal yrtr") == most_recent
+        )
+    else:
+        # Check specifiers (which should be lowercased) and filter the
+        # DataFrame accordingly.
+        for spec in specs:
+            # Process each specifier to filter the DataFrame.
+            if len(spec) == 5 and spec[-1] in ['1', '3', '5']:
+                # Specifier probably a year/term, filter by it:
+                filtered_table = filtered_table.filter(
+                    pl.col('Fiscal yrtr') == spec
+                    )
+            elif (re.match('[a-z]{2,4}', spec) and spec not in ['lasc', 'wi']):
+                # Specifier is probably a course rubric, filter by it:
+                filtered_table = filtered_table.filter(
+                    pl.col('Subj') == spec.upper()
+                )
+            else:
+                # Specifier either a course number or LASC area
+                if subject == 'lasc':
+                    # If the subject is 'lasc', filter by LASC/WI value
+                    filtered_table = filtered_table.filter(
+                        pl.col('LASC/WI').str.contains(spec, case=False)
+                    )
+                else:
+                    # Otherwise, filter by course number
+                    filtered_table = filtered_table.filter(
+                        pl.col('#') == spec
+                    )
+
+    # Collect the filtered DataFrame into a regular Polars DataFrame
+    # to be rendered in the template.
+    render_me = filtered_table.collect()
 
     return common_response(render_me, request.path)
 

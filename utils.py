@@ -5,44 +5,73 @@ import numpy as np
 from flask import render_template
 import polars as pl
 
-
 from config import COURSE_DETAIL_URL, CACHE_DIR
 
+#
 # This is an importable file of utility functions for the Flask app.
+# The only functions that actually get imported int the app are
+# filter_subject and common_response.  All the other functions here
+# are used by those two functions to do the actual work of filtering
+# the data and calculating various statistics.
+#
 
-def load_table(datafile):
+def filter_subject(subject, tbl):
     """
-    Load the course data from a parquet file into a Polars LazyFrame.
+    Filters down a Polars Lazy DataFrame to only the rubric that matches
+    the subject provided. The subject can be a course subject (e.g.,
+    'CSCI'), a LASC area ('lasc'), a WI course ('wi'), or '18online' for
+    online courses. If the subject is 'all', it returns the entire
+    table.
 
     Parameters
     ----------
-    datafile : str
-        The path to the parquet file containing course data.
+
+    subject : str
+        The subject to filter by, which can be a course subject (e.g.,
+        'CSCI'), a LASC area ('lasc'), a WI course ('wi'), or '18online'
+        for online courses.
+
+    tbl : polars Lazy DataFrame
+        The table containing course data to be filtered.
 
     Returns
     -------
-    pl.LazyFrame
-        A Polars LazyFrame containing the course data.
+    polars Lazy DataFrame
+        This is a Polars LazyFrame, which applies the filtering
+        operation lazily, meaning it does not immediately execute the
+        filtering operation until the data is actually needed.
+
+        The default behavior is to filter by the subject provided. If
+        the subject is 'lasc', it filters for LASC courses; if 'wi', it
+        filters for WI courses; if '18online', it filters for online
+        courses; if 'all', it returns the entire table; otherwise, it
+        filters by the specified course subject.
     """
-    # Read the parquet file into a Polars LazyFrame
-    table = pl.read_parquet(datafile).lazy()
-
-    # Add a human-readable year-term column to the LazyFrame
-    table = table.with_columns(
-        pl.col('year_term').apply(lambda yrtr: parse_year_term(str(yrtr)), return_dtype=pl.Utf8).alias('Term')
-    )
-
-    return table
+    subject = subject.lower() # Make sure subject is lowercase
+    if subject == 'lasc':
+        return tbl.filter(
+            (pl.col("LASC/WI").is_not_null()) & (pl.col("LASC/WI") != "WI")
+            )
+    elif subject == 'wi':
+        return tbl.filter(pl.col("LASC/WI") == "WI")
+    elif subject == '18online':
+        return tbl.filter(pl.col('18online') == True)
+    elif subject == 'all':
+        # No filtering, just return the original LazyFrame
+        return tbl
+    else:
+        # Regular academic subject to select
+        return tbl.filter(pl.col('Subj') == subject.upper())
 
 
 def filled_credits(credit_column, variable_credits=1):
     """
-    Convert the 'Crds' column in the table to a numeric format,
+    Convert the course credit column in the table to a numeric format,
     filling in variable credits with a specified value.
 
     Parameters
     ----------
-    credit_column : astropy Column
+    credit_column : Polars Series
         The column containing credit information, which may include
         variable credits represented as 'Vari.'.
     variable_credits : int, optional
@@ -50,11 +79,14 @@ def filled_credits(credit_column, variable_credits=1):
 
     Returns
     ------- 
-    np.ndarray
-        An array of integer credits, with variable credits replaced
-        by the specified value.
+    list of int
+        This function returns a list of integers representing the
+        credits for each course. Variable credits (represented as 'Vari.')
+        in the original column are replaced with the specified value
+        (`variable_credits`), and all credits are rounded to the nearest
+        valid integer.
     """
-    # Identify rows where the credit value is 'Vari.'
+    # Identify rows in Polars series where the credit value is 'Vari.'
     vari_rows = credit_column == 'Vari.'
 
     # Create a copy of the credit column, masking the variable rows
@@ -121,9 +153,11 @@ def calc_seats(table):
 
     # Filter out canceled courses
     not_canceled = table['Status'] != 'Cancelled'
+
     # Calculate the number of empty seats for courses that are not canceled
     # and where the size is greater than the number of enrolled students.
     empty = table['Size:'] - table['Enrolled']
+
     # Only keep positive empty seats
     positive = empty > 0
     empty *= positive
@@ -200,50 +234,6 @@ def gen_cache_file(path, table):
     if not os.path.isfile(file_path):
         table.write(file_path)
     return name
-
-
-def match_subject(subject, tbl):
-    """
-    Match the subject to the table, filtering it down to only the
-    relevant courses.
-
-    Parameters
-    ----------
-
-    subject : str
-        The subject to filter by, which can be a course subject (e.g., 'CSCI'),
-        a LASC area ('lasc'), a WI course ('wi'), or '18online' for online courses.
-    tbl : astropy Table
-        The table containing course data to be filtered.
-
-    Returns
-    -------
-    astropy Table
-        A filtered table containing only the courses that match the specified
-        subject. If the subject is 'lasc', it filters for LASC courses; if 'wi',
-        it filters for WI courses; if '18online', it filters for online courses;
-        if 'all', it returns the entire table; otherwise, it filters by the
-        specified course subject.
-    """
-    
-    if subject == 'lasc':
-        render_me = tbl[~tbl['LASC/WI'].mask]
-        really_lasc = np.array([len(lasc.strip('WI')) > 0 for lasc in render_me['LASC/WI']])
-        render_me = render_me[really_lasc]
-    elif subject == 'wi':
-        render_me = tbl[~tbl['LASC/WI'].mask]
-        really_wi = np.array(['WI' in lasc for lasc in render_me['LASC/WI']])
-        render_me = render_me[really_wi]
-    elif subject == '18online':
-        keep = tbl['18online'] == 'True'
-        render_me = tbl[keep]
-    elif subject == 'all':
-        render_me = tbl.copy()
-    else:
-        # Regular academic subject...
-        keep = tbl['Subj'] == subject.upper()
-        render_me = tbl[keep]
-    return render_me
 
 
 def common_response(render_me, path):

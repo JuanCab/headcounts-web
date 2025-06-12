@@ -3,47 +3,36 @@ import os
 
 import numpy as np
 from flask import render_template
+import polars as pl
+
 
 from config import COURSE_DETAIL_URL, CACHE_DIR
 
 # This is an importable file of utility functions for the Flask app.
 
-def parse_year_term(year_term_str):
+def load_table(datafile):
     """
-    Given a year/term code as a string return a human-readable
-    year and term.
+    Load the course data from a parquet file into a Polars LazyFrame.
 
     Parameters
     ----------
-    year_term_str : str
-        A string representing the fiscal year and term, such as '20231',
-        '20233', '20235', etc. The last digit indicates the term:
-        - '1' for Summer
-        - '3' for Fall
-        - '5' for Spring
-       NOTE: Since fiscal years start in the summer, the year is
-       represented as the year of the summer term, so '20231' is
-       Summer 2022, '20233' is Fall 2022, and '20235' is Spring 2023.
+    datafile : str
+        The path to the parquet file containing course data.
 
     Returns
     -------
-    str
-        A human-readable string representing the term, such as 'Summer 2022',
-        'Fall 2022', or 'Spring 2023'.
+    pl.LazyFrame
+        A Polars LazyFrame containing the course data.
     """
-    # Define a mapping of term numbers to human-readable names
-    term_names = {1: 'Summer', 3: 'Fall', 5: 'Spring'}
-    term = int(year_term_str[-1])
+    # Read the parquet file into a Polars LazyFrame
+    table = pl.read_parquet(datafile).lazy()
 
-    # Extract fiscal year and convert to actual year
-    fiscal_year = int(year_term_str[:-1])
-    if term < 5:
-        year = fiscal_year - 1
-    else:
-        year = fiscal_year
+    # Add a human-readable year-term column to the LazyFrame
+    table = table.with_columns(
+        pl.col('year_term').apply(lambda yrtr: parse_year_term(str(yrtr)), return_dtype=pl.Utf8).alias('Term')
+    )
 
-    # Return the formatted string with the term name and year
-    return f"{term_names.get(term, 'Unknown')} {year}"
+    return table
 
 
 def filled_credits(credit_column, variable_credits=1):

@@ -137,11 +137,11 @@ def main(new_data_file):
 
     # Check for missing tuition values in the new data and set it to 
     # zero if it is an integer type.
-    tuition_cols = ['Tuition -resident',
-                                   'Tuition -nonresident',
-                                   'Approximate Course Fees',
-                                   'Book Cost']
-    for tuition in tuition_cols:
+    last_cols = ['Tuition -resident',
+                    'Tuition -nonresident',
+                    'Approximate Course Fees',
+                    'Book Cost']
+    for tuition in last_cols:
         # Check for null values in the tuition column and replace with 
         # $0.00
         result_df = result_df.with_columns(
@@ -162,8 +162,13 @@ def main(new_data_file):
     # # Save the updated dataframe to the CSV file
     result_df.write_csv(COMPOSITE_CSV)
 
+    #
+    # Now make changes to columns to make data more useful and store the
+    # updated dataframe in a Parquet file.
+    #
+
     # Convert all the tuition columns from dollar strings to floats
-    for col in tuition_cols:
+    for col in last_cols:
         if col in result_df.columns:
             result_df = result_df.with_columns(
                 pl.col(col).str.replace_all(r'[$,]', '').cast(float)
@@ -181,12 +186,64 @@ def main(new_data_file):
             (pl.col("timestamp").dt.convert_time_zone("America/Chicago")
              .alias("timestamp"))
         )
+        
+    # Add a column for the year_term in a human-readable format, make it
+    # the first column in the dataframe. This involves creating several
+    # temporary columns to hold the year and term code, then merging the
+    # two into a single column.
+    result_df = result_df.with_columns(
+        pl.col("year_term").cast(str).str.slice(0, 4).cast(pl.Int32).alias("fiscal_year"),
+        pl.col("year_term").cast(str).str.slice(-1).cast(pl.Int32).alias("term_code")
+    )
+    # If the term code is 5 (Spring), then the year is the fiscal year
+    # otherwise it is the fiscal year - 1
+    result_df = result_df.with_columns(
+        pl.when(pl.col("term_code") == 5).then(pl.col("fiscal_year"))
+        .otherwise(pl.col("fiscal_year") - 1).alias("year")
+        )
+    # Create a human-readable term name based on the term code
+    term_map = {1: "Summer", 3: "Fall", 5: "Spring"}
+    result_df = result_df.with_columns(
+        pl.col("term_code").replace(term_map,default=None).alias("term_name")
+    )
+    # Finally, create a term name column that combines the term name 
+    # and year
+    result_df = result_df.with_columns(
+        pl.concat_str(
+            [pl.col("term_name"), pl.col("year").cast(pl.Utf8)],
+            separator=" "
+        ).alias("Term")
+    )
+    # Drop all the temporary columns we created
+    result_df = result_df.drop(["fiscal_year", "term_code", "year", "term_name"])
 
-    #
-    # Save the updated dataframe to a Parquet file
-    #
-    # Rename the "Size:" column to "Size" to match the current data format
-    result_df = result_df.rename({'Size:': 'Size'})
+    # Move Term to be first column in the dataframe (need to cast to 
+    # Utf8 to avoid issues with Polars)
+    result_df = result_df.select(
+        pl.col("Term").cast(pl.Utf8), 
+        *[col for col in result_df.columns if col != "Term"]
+    )
+    # Make sure the following columns are the last few columns in the
+    # dataframe in this order
+    last_cols = ['Tuition unit', 'Tuition -resident', 'Tuition -nonresident',
+                    'Approximate Course Fees', 'Book Cost','timestamp', 
+                    'year_term']
+    result_df = result_df.select(
+        *[col for col in result_df.columns if col not in last_cols],
+        *last_cols
+    )
+
+    # Rename some columns
+    rename_map = {
+        'Size:': 'Size',
+        'Crds': 'Credits',
+        'Tuition -resident': 'Tuition Resident',
+        'Tuition -nonresident': 'Tuition Non-Resident',
+        'year_term': 'Fiscal yrtr',
+        'timestamp': 'Last Updated'
+    }
+    result_df = result_df.rename(rename_map)
+
     # Dump the parquet file
     parquet_file = COMPOSITE_CSV.replace('.csv', '.parquet')
     result_df.write_parquet(parquet_file)

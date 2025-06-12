@@ -1,7 +1,7 @@
-gunicorn
-astropy
-flask
-jinja2
 dominate
+gunicorn
+flask
 flask-bootstrap
+jinja2
+polars
 visitor

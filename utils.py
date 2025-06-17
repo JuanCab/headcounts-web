@@ -1,5 +1,6 @@
 import datetime
 import os
+import re
 
 import numpy as np
 from flask import render_template
@@ -15,24 +16,35 @@ from config import COURSE_DETAIL_URL, CACHE_DIR
 # the data and calculating various statistics.
 #
 
-def filter_subject(subject, tbl):
+def filter_data(tbl, subject, spec1=None, spec2=None):
     """
-    Filters down a Polars Lazy DataFrame to only the rubric that matches
-    the subject provided. The subject can be a course subject (e.g.,
-    'CSCI'), a LASC area ('lasc'), a WI course ('wi'), or '18online' for
-    online courses. If the subject is 'all', it returns the entire
-    table.
+    This takes the original Polars Lazy DataFrame and filters it down to
+    only the rows that match the subject and specifications provided.
+    The subject can be a course subject (e.g., 'CSCI'), a LASC area
+    ('lasc'), a WI course ('wi'), or '18online' for online courses. If
+    the subject is 'all', it returns the entire table.
 
     Parameters
     ----------
+    tbl : polars Lazy DataFrame
+        The table containing course data to be filtered.
 
     subject : str
         The subject to filter by, which can be a course subject (e.g.,
         'CSCI'), a LASC area ('lasc'), a WI course ('wi'), or '18online'
-        for online courses.
+        for online courses. Setting it to 'all' will return the
+        entire table without filtering (pending other specified filters
+        below).
 
-    tbl : polars Lazy DataFrame
-        The table containing course data to be filtered.
+    spec1 : str, optional
+        The first specification to filter by, which can be a course
+        number, a LASC area, a WI course, or term code. If not provided,
+        it defaults to None.
+
+    spec2 : str, optional
+        The second specification to filter by, which can be a course
+        number, a LASC area, a WI course, or term code. If not provided,
+        it defaults to None.
 
     Returns
     -------
@@ -41,27 +53,80 @@ def filter_subject(subject, tbl):
         operation lazily, meaning it does not immediately execute the
         filtering operation until the data is actually needed.
 
-        The default behavior is to filter by the subject provided. If
-        the subject is 'lasc', it filters for LASC courses; if 'wi', it
-        filters for WI courses; if '18online', it filters for online
-        courses; if 'all', it returns the entire table; otherwise, it
-        filters by the specified course subject.
+
+    The default behavior is to filter by the subject provided. If
+    the subject is 'lasc', it filters for LASC courses; if 'wi', it
+    filters for WI courses; if '18online', it filters for online
+    courses; if 'all', it returns the entire table; otherwise, it
+    filters by the specified course subject.
     """
-    subject = subject.lower() # Make sure subject is lowercase
+
+    # Make sure subject is lowercase
+    subject = subject.lower()
+
+    # Determine the subject category and filter accordingly
     if subject == 'lasc':
         return tbl.filter(
             (pl.col("LASC/WI").is_not_null()) & (pl.col("LASC/WI") != "WI")
             )
     elif subject == 'wi':
-        return tbl.filter(pl.col("LASC/WI") == "WI")
+        filtered_table = tbl.filter(pl.col("LASC/WI") == "WI")
     elif subject == '18online':
-        return tbl.filter(pl.col('18online') == True)
+        filtered_table = tbl.filter(pl.col('18online') == True)
     elif subject == 'all':
         # No filtering, just return the original LazyFrame
-        return tbl
+        filtered_table = tbl
     else:
         # Regular academic subject to select
-        return tbl.filter(pl.col('Subj') == subject.upper())
+        filtered_table = tbl.filter(pl.col('Subj') == subject.upper())
+
+    # Collect the specifiers (spec1 and spec2) into a list (lowercased)
+    # after filtering out 'all' and Nones
+    specs = [s.lower() for s in [spec1, spec2] if s and s.lower() != 'all']
+
+    # If no specific specs are provided and the subject is not 'all',
+    # filter to only include the most recent year/term.
+    if not specs and subject != 'all':
+        # Identify the most recent year/term in the dataset.
+        most_recent = ( filtered_table.select(pl.col("Fiscal yrtr").max())
+                 .collect()
+                 .item()
+                 )
+        # Filter the DataFrame to include only rows with the most recent
+        # year/term.
+        filtered_table = filtered_table.filter(
+            pl.col("Fiscal yrtr") == most_recent
+        )
+    else:
+        # Check specifiers (which should be lowercased) and filter the
+        # DataFrame accordingly.
+        for spec in specs:
+            # Process each specifier to filter the Lazy DataFrame.
+            # 1) Handle year/term specifiers
+            if len(spec) == 5 and spec[-1] in ['1', '3', '5']:
+                filtered_table = filtered_table.filter(
+                    pl.col('Fiscal yrtr') == int(spec)
+                    )
+            # 2) Handle Course Rubric specifiers
+            elif (re.match('[a-z]{2,4}', spec) and spec not in ['lasc', 'wi']):
+                filtered_table = filtered_table.filter(
+                    pl.col('Subj') == spec.upper()
+                )
+            else:
+                # Specifier either a course number or LASC area
+                if subject == 'lasc':
+                    # If the subject is 'lasc', filter by LASC/WI value
+                    filtered_table = filtered_table.filter(
+                        pl.col('LASC/WI').str.contains(spec, case=False)
+                    )
+                else:
+                    # Otherwise, filter by course number
+                    filtered_table = filtered_table.filter(
+                        pl.col('#') == spec
+                    )
+
+    # Return the filtered LazyFrame
+    return filtered_table
 
 
 def filled_credits(credit_column, variable_credits=1):

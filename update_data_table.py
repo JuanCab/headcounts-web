@@ -6,6 +6,8 @@
 # 
 # In Summer 2025, Juan Cabanela developed a new version of this code
 # with the following changes:
+# - The documentation was updated to reflect the changes in the code and
+#   to be a little more complete.
 # - It uses the Polars library to handle the data, which allows for
 #   quicker handling of the data and more efficient memory usage.
 # - The cumulative enrollment data is now always backed up before
@@ -13,12 +15,12 @@
 # - In addition to exporting data in CSV format, the code now also
 #   exports the data in Parquet format, which is more efficient for
 #   storage (as it is compressed) and analytical processing (as it is
-#   columnar).
-# - THe documentation was also updated to reflect the changes in the
-#   code and to be a little more complete.
+#   columnar) and also allows me to add some addition columns including:
+#   - Rename some columns to be a little clearer titles.
+#   - Precomputing the "term name" and adding that as a column.
+#   - Adding the college a particular rubric is associated with.
 
 import polars as pl
-import numpy as np
 from datetime import datetime
 
 COMPOSITE_CSV = 'all_enrollments.csv'
@@ -223,9 +225,23 @@ def main(new_data_file):
         pl.col("Term").cast(pl.Utf8), 
         *[col for col in result_df.columns if col != "Term"]
     )
+
+    # Read in the rubric to college mapping file
+    rubric2college_df = pl.read_csv('msum_setup/Rubric2College.csv')
+
+    # Map the "Subj" column to the "College" column using the
+    # rubric2college_df dataframe
+    result_df = result_df.join(
+        rubric2college_df,
+        left_on='Subj',
+        right_on='Rubric',
+        how='left'
+    )
+    result_df = result_df.drop('College').rename({'CollegeCode': 'College'})
+
     # Make sure the following columns are the last few columns in the
     # dataframe in this order
-    last_cols = ['Tuition unit', 'Tuition -resident', 'Tuition -nonresident',
+    last_cols = ['College', 'Tuition unit', 'Tuition -resident', 'Tuition -nonresident',
                     'Approximate Course Fees', 'Book Cost','timestamp', 
                     'year_term']
     result_df = result_df.select(

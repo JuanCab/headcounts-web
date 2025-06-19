@@ -236,7 +236,7 @@ def main(new_data_file):
     result_df = result_df.drop(["fiscal_year", "term_code", "year", "term_name"])
 
     # Set the order of the first few columns to be a fixed order
-    first_cols = ['Term', 'ID #', 'Subj', '#', 'Sec', 'Title', 
+    first_cols = ['Term', 'year_term', 'ID #', 'Subj', '#', 'Sec', 'Title', 
                   'Crds', 'Enrolled', 'Size:', 'Status' ]
     result_df = result_df.select(
         *first_cols,
@@ -259,8 +259,7 @@ def main(new_data_file):
     # Make sure the following columns are the last few columns in the
     # dataframe in this order
     last_cols = ['College', 'Tuition unit', 'Tuition -resident', 'Tuition -nonresident',
-                    'Approximate Course Fees', 'Book Cost','timestamp',
-                    'year_term']
+                    'Approximate Course Fees', 'Book Cost','timestamp']
     result_df = result_df.select(
         *[col for col in result_df.columns if col not in last_cols],
         *last_cols

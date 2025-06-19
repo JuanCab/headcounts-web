@@ -235,11 +235,12 @@ def main(new_data_file):
     # Drop all the temporary columns we created
     result_df = result_df.drop(["fiscal_year", "term_code", "year", "term_name"])
 
-    # Move Term to be first column in the dataframe (need to cast to
-    # Utf8 to avoid issues with Polars)
+    # Set the order of the first few columns to be a fixed order
+    first_cols = ['Term', 'ID #', 'Subj', '#', 'Sec', 'Title', 
+                  'Crds', 'Enrolled', 'Size:', 'Status' ]
     result_df = result_df.select(
-        pl.col("Term").cast(pl.Utf8),
-        *[col for col in result_df.columns if col != "Term"]
+        *first_cols,
+        *[col for col in result_df.columns if col not in first_cols]
     )
 
     # Read in the rubric to college mapping file

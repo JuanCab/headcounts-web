@@ -418,7 +418,7 @@ def common_response(render_me, path, subj_text):
 
     # If the table is larger than max_rows rows, only render the first max_rows
     # rows to avoid performance issues in the browser.
-    max_rows = 250
+    max_rows = 300
     n_rows = render_me.height
     if render_me.height > max_rows:
         render_me = render_me.head(max_rows)

@@ -8,6 +8,7 @@
     <p>The first thing after the site name is one of the items below. If that is the only thing you specify you will see data for the current or upcoming semester (depending on time of semester)</p>
     <ul>
         <li>a subject (e.g. phys or econ, upper or lower case is fine) -- show courses in that subject</li>
+        <li>a college code (allowed codes are 'cbac', 'coah', 'cshe', 'cehs', or 'none')</li>
         <li>all -- show all courses.</li>
         <li>lasc -- shows all lasc courses.</li>
         <li>wi -- show all writing intensive courses.</li>
@@ -25,6 +26,7 @@
     <h2>Examples:</h2>
     <ul>
         <li><b>Current/upcoming Math courses:</b>  <a href="{{ base_url }}math">{{ base_url }}math</a></li>
+        <li><b>Current/upcoming courses in College of Business, Analytics, and Communication:</b>  <a href="{{ base_url }}cbac">{{ base_url }}cbac</a></li>
         <li><b>Current/upcoming writing-intensive courses:</b> <a href="{{ base_url }}wi">{{ base_url }}wi</a></li>
         <li><b>Math 261:</b> <a href="{{ base_url }}math/261">{{ base_url }}math/261</a></li>
         <li><b>Math 261, Fall 2014 only:</b> <a href="{{ base_url }}math/261/20153">{{ base_url }}math/261/20153</a></li>

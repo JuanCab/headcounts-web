@@ -56,13 +56,18 @@ def filtered_view(subject, spec1=None, spec2=None):
 
     # Get a filtered version of the lazy DataFrame based on the subject
     # (including LASC, WI, or all courses).
-    filtered_table = filter_data(table, subject, spec1, spec2)
+    filtered_table, subj_text = filter_data(table, subject, spec1, spec2)
 
     # Collect the filtered DataFrame into a regular Polars DataFrame
     # to be rendered in the template.
     render_me = filtered_table.collect()
 
-    return common_response(render_me, request.path)
+    # Call common_response to render the filtered data in the render_me
+    # DataFrame and return the response. The request path is passed to
+    # common_response to ensure the correct URL is used for the download link.
+    # The subj_text is also passed to provide context for the subject 
+    # being viewed.
+    return common_response(render_me, request.path, subj_text)
 
 
 # Define the route for downloading a cached CSV file

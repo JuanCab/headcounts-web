@@ -62,12 +62,11 @@ def filter_data(tbl, subject, spec1=None, spec2=None):
        A string representation of the subject and specifications that
        produced this filtered table.
     """
-    print(f"DEBUG: Started filter_data() for subject: {subject} with specs: '{spec1}' and '{spec2}'", flush=True)
 
     # MSUM Colleges
     MSUM_COLLEGES = [ 'cbac', 'coah', 'cshe', 'cehs', 'none' ]
 
-    # Set the subject description string to the upper case version 
+    # Set the subject description string to the upper case version
     # of the subject, but then make sure to convert the subject
     # to lower case for filtering purposes.
     subj_text = subject.upper()
@@ -88,6 +87,7 @@ def filter_data(tbl, subject, spec1=None, spec2=None):
     elif subject == 'all':
         # No filtering, just return the original LazyFrame
         filtered_table = tbl
+        subj_text = "All"
     else:
         # Regular academic subject to select
         filtered_table = tbl.filter(pl.col('Subj') == subject.upper())
@@ -96,8 +96,6 @@ def filter_data(tbl, subject, spec1=None, spec2=None):
     # after filtering out 'all' and Nones
     specs = [s.lower() for s in [spec1, spec2] if s and s.lower() != 'all']
 
-    print(f"DEBUG: Filtering for subject: {subject} with specs: {specs}", flush=True)
-    
     # If no specific specs are provided and the subject is not 'all',
     # filter to only include the most recent year/term.
     if not specs and subject != 'all':
@@ -111,7 +109,6 @@ def filter_data(tbl, subject, spec1=None, spec2=None):
         filtered_table = filtered_table.filter(
             pl.col("Fiscal yrtr") == most_recent
         )
-        print(f"DEBUG: Automatically filtering to most recent year/term: {most_recent}", flush=True)
     else:
         # Check specifiers (which should be lowercased) and filter the
         # DataFrame accordingly.
@@ -122,30 +119,27 @@ def filter_data(tbl, subject, spec1=None, spec2=None):
                 filtered_table = filtered_table.filter(
                     pl.col('Fiscal yrtr') == int(spec)
                     )
-                print(f"DEBUG: Filtering by term: {most_recent}", flush=True)
             # 2) Handle Course Rubric specifiers
             elif (re.match('[a-z]{2,4}', spec) and spec not in ['lasc', 'wi']):
                 filtered_table = filtered_table.filter(
                     pl.col('Subj') == spec.upper()
                 )
                 subj_text = f"{subj_text} {spec}"
-                print(f"DEBUG: Filtering by rubric specifier: {spec}", flush=True)
             else:
                 # Specifier either a course number or LASC area
                 if subject == 'lasc':
                     # If the subject is 'lasc', filter by LASC/WI value
+                    # which is expected to be uppercase (eg. 1A)
                     filtered_table = filtered_table.filter(
-                        pl.col('LASC/WI').str.contains(spec, case=False)
+                        pl.col('LASC/WI').str.contains(spec.upper())
                     )
                     subj_text = f"{subj_text} {spec.upper()}"
-                    print(f"DEBUG: Filtering by lasc area specifier: {spec}", flush=True)
                 else:
                     # Otherwise, filter by course number
                     filtered_table = filtered_table.filter(
                         pl.col('#') == spec
                     )
                     subj_text = f"{subj_text} {spec}"
-                    print(f"DEBUG: Filtering by course number: {spec}", flush=True)
 
 
     # Always sort the output by Fiscal yrtr, Subj, #, and section
@@ -418,12 +412,40 @@ def common_response(render_me, path, subj_text):
     most_recent = render_me.select(pl.col('Last Updated')).max().item()
     oldest = render_me.select(pl.col('Last Updated')).min().item()
 
+    #
+    # Modify the table to be rendered in the template
+    #
+
     # If the table is larger than max_rows rows, only render the first max_rows
     # rows to avoid performance issues in the browser.
     max_rows = 250
     n_rows = render_me.height
     if render_me.height > max_rows:
         render_me = render_me.head(max_rows)
+
+    # Drop 'Fiscal yrtr' from the rendered table
+    render_me = render_me.drop(['Fiscal yrtr'])
+
+    # Compute various statistics for the table
+    stu_credit_hours = calc_sch(render_me)
+    seats = calc_seats(render_me)
+    calulcated_tuition = calc_tuition(render_me)
+    
+    # Convert all the columns with money values to strings with
+    # dollar signs and commas for thousands.
+    money_cols = [ 'Tuition Resident', 'Tuition Non-Resident',
+                  'Approximate Course Fees', 'Book Cost',]
+    render_me = render_me.with_columns([
+        pl.col(col)
+        .map_elements(lambda x: f"${x:,.2f}" if x is not None else None, return_dtype=pl.Utf8)
+        .alias(col)
+        for col in money_cols
+    ])
+
+    # Convert the 'Last Updated' column to a string representation
+    render_me = render_me.with_columns(
+        pl.col('Last Updated').dt.strftime('%Y-%m-%d %H:%M:%S').alias('Last Updated')
+    )
 
     # Render the page using the 'course_info.html' template,
     return render_template('course_info.html',
@@ -434,8 +456,8 @@ def common_response(render_me, path, subj_text):
                            oldest=oldest,
                            most_recent=most_recent,
                            year_term=terms,
-                           sch=calc_sch(render_me),
+                           sch=stu_credit_hours,
                            filename=csv_filename,
-                           seats=calc_seats(render_me),
-                           revenue=calc_tuition(render_me),
+                           seats=seats,
+                           revenue=calulcated_tuition,
                            base_detail_url=COURSE_DETAIL_URL)

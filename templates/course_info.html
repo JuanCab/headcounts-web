@@ -11,10 +11,9 @@
 <h5>(Note: the number of empty seats is the course size limit (Size) minus the enrollment or zero if the course is over-enrolled.)</h5>
 <h5>(percent empty is {{ (100 * seats['empty'] / seats['available']) | round(2) }}%)</h5>
 
-<h4><a href="{{ url_for('download', filename=filename) }}">Download this data</a></h4>
+<h4>The table shown below only contains the first {{ max_rows }} rows of data. The full dataset is available as a <a href="{{ url_for('download', filename=filename) }}">CSV file (Download here)</a></h4>
 
-<h3>Newest data in this table was gathered: {{ most_recent }}</h3>
-<!--- <h3>"Average" date of collection for entire dataset: {{ timestamp }}</h3> -->
+<h3>The data in this table was gathered between {{ oldest }} and {{ most_recent }}.</h3>
 
 <table class="table table-striped table-bordered table-responsive table-hover">
 

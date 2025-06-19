@@ -1,9 +1,9 @@
 # This code is used to merge new enrollment data into an existing
 # dataset, updating existing entries and appending new ones as needed
-# 
+#
 # The initial version of this was developed by Matt Craig and used the
-# astropy Table data structure to hold the table.  
-# 
+# astropy Table data structure to hold the table.
+#
 # In Summer 2025, Juan Cabanela developed a new version of this code
 # with the following changes:
 # - The documentation was updated to reflect the changes in the code and
@@ -80,7 +80,7 @@ def main(new_data_file):
     # Switch things up a bit, maybe. Do an outer join that includes all
     # of the new data. This will be a lef join of the current data with
     # the new data, which will include all of the new data and the
-    # matching rows of the current data set. 
+    # matching rows of the current data set.
     joined_df = new_df.join(current_df,
                              on='index', how='left', suffix='_current')
 
@@ -98,10 +98,10 @@ def main(new_data_file):
         # Replace each current_df row with a matching index in the
         # common_entries_df with the matching entries from the common_entries_df
         print(f"Updated {len(common_entries_df)} common entries in the current data.")
-        
+
         # Get the updated data from the common entries
         updated_rows_df = common_entries_df.select(
-            pl.exclude([col for col in common_entries_df.columns 
+            pl.exclude([col for col in common_entries_df.columns
                         if col.endswith('_current')])
         )
 
@@ -127,7 +127,7 @@ def main(new_data_file):
         print(f"Adding {len(data_to_append_df)} new entries in the current data.")
         # Select the data to append, excluding the current data columns
         new_rows_df = data_to_append_df.select(
-            pl.exclude([col for col in data_to_append_df.columns 
+            pl.exclude([col for col in data_to_append_df.columns
                         if col.endswith('_current')])
         )
 
@@ -137,14 +137,14 @@ def main(new_data_file):
     # Remove the (now unnecessary) index column from the result_df
     result_df = result_df.drop('index')
 
-    # Check for missing tuition values in the new data and set it to 
+    # Check for missing tuition values in the new data and set it to
     # zero if it is an integer type.
     last_cols = ['Tuition -resident',
                     'Tuition -nonresident',
                     'Approximate Course Fees',
                     'Book Cost']
     for tuition in last_cols:
-        # Check for null values in the tuition column and replace with 
+        # Check for null values in the tuition column and replace with
         # $0.00
         result_df = result_df.with_columns(
             pl.when(pl.col(tuition).is_null())
@@ -152,7 +152,7 @@ def main(new_data_file):
             .otherwise(pl.col(tuition))
             .alias(tuition)
         )
-        # Check for all "n/a" values in the tuition column and replace with 
+        # Check for all "n/a" values in the tuition column and replace with
         # $0.00
         result_df = result_df.with_columns(
             pl.when(pl.col(tuition).str.to_lowercase() == 'n/a')
@@ -161,13 +161,29 @@ def main(new_data_file):
             .alias(tuition)
         )
 
-    # # Save the updated dataframe to the CSV file
+    # Fix weird glitch where "zz" is inserted into the location.
+    # We remove ALL instances of "zz" in the location column.
+    result_df = result_df.with_columns(
+        pl.col('Loc').str.replace_all(r'zz', '').alias('Loc')
+    )
+
+    # Save the updated dataframe to the CSV file
     result_df.write_csv(COMPOSITE_CSV)
 
+    #
+    # PARQUET FILE PROCESSING
     #
     # Now make changes to columns to make data more useful and store the
     # updated dataframe in a Parquet file.
     #
+
+    # Convert all null values for 'Delivery Method' to 'On Campus'
+    result_df = result_df.with_columns(
+        pl.when(pl.col('Delivery Method').is_null())
+        .then(pl.lit("On Campus"))
+        .otherwise(pl.col('Delivery Method'))
+        .alias('Delivery Method')
+    )
 
     # Convert all the tuition columns from dollar strings to floats
     for col in last_cols:
@@ -188,7 +204,7 @@ def main(new_data_file):
             (pl.col("timestamp").dt.convert_time_zone("America/Chicago")
              .alias("timestamp"))
         )
-        
+
     # Add a column for the year_term in a human-readable format, make it
     # the first column in the dataframe. This involves creating several
     # temporary columns to hold the year and term code, then merging the
@@ -206,9 +222,9 @@ def main(new_data_file):
     # Create a human-readable term name based on the term code
     term_map = {1: "Summer", 3: "Fall", 5: "Spring"}
     result_df = result_df.with_columns(
-        pl.col("term_code").replace(term_map,default=None).alias("term_name")
+        pl.col("term_code").replace_strict(term_map,default=None).alias("term_name")
     )
-    # Finally, create a term name column that combines the term name 
+    # Finally, create a term name column that combines the term name
     # and year
     result_df = result_df.with_columns(
         pl.concat_str(
@@ -219,10 +235,10 @@ def main(new_data_file):
     # Drop all the temporary columns we created
     result_df = result_df.drop(["fiscal_year", "term_code", "year", "term_name"])
 
-    # Move Term to be first column in the dataframe (need to cast to 
+    # Move Term to be first column in the dataframe (need to cast to
     # Utf8 to avoid issues with Polars)
     result_df = result_df.select(
-        pl.col("Term").cast(pl.Utf8), 
+        pl.col("Term").cast(pl.Utf8),
         *[col for col in result_df.columns if col != "Term"]
     )
 
@@ -242,7 +258,7 @@ def main(new_data_file):
     # Make sure the following columns are the last few columns in the
     # dataframe in this order
     last_cols = ['College', 'Tuition unit', 'Tuition -resident', 'Tuition -nonresident',
-                    'Approximate Course Fees', 'Book Cost','timestamp', 
+                    'Approximate Course Fees', 'Book Cost','timestamp',
                     'year_term']
     result_df = result_df.select(
         *[col for col in result_df.columns if col not in last_cols],

@@ -5,3 +5,4 @@ flask-bootstrap
 jinja2
 polars
 visitor
+xlsxwriter

@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 from flask import render_template
 import polars as pl
-
+import xlsxwriter
 from config import COURSE_DETAIL_URL, CACHE_DIR
 
 #
@@ -318,14 +318,14 @@ def calc_tuition(table, variable_credits=1):
     return f"${table['Tuition Charged'].sum():,.2f}"
 
 
-def generate_csv_file(table, path, dir=CACHE_DIR):
+def generate_datafiles(table, path, subj_text, dir=CACHE_DIR):
     """
-    Generate a CSV file containing all the data in this dataframe
-    and save it to the cache directory. The filename is generated
-    based on the URL path and the average timestamp of the courses in
-    the table. The average timestamp is used to ensure that the filename
-    is unique for each view, even if the same path is accessed multiple
-    times.
+    Generates a CSV file and an Excel file containing all the data in
+    this dataframe and save it to the cache directory. The filename is
+    generated based on the URL path and the average timestamp of the
+    courses in the table. The average timestamp is used to ensure that
+    the filename is unique for each view, even if the same path is
+    accessed multiple times.
 
     Parameters
     ----------
@@ -334,6 +334,9 @@ def generate_csv_file(table, path, dir=CACHE_DIR):
     path : str
         The URL path that got the user here, used to generate a unique
         filename for the cached data.
+    subj_text : str
+        The description of the filtering applied to the table, used to
+        generate Excel worksheet name.
     dir : str, optional
         The directory where the CSV file will be saved. Defaults to
         the CACHE_DIR defined in the config.
@@ -343,7 +346,21 @@ def generate_csv_file(table, path, dir=CACHE_DIR):
     str
         The name of the CSV datafile containing the course data for the
         specified view.
+
+    str
+        The name of the Excel datafile containing the course data for the
+        specified view.
     """
+
+    # Fix "Last Updated" column to be a datetime column without the
+    # timezone information, so it can be written to the CSV and Excel
+    # files without issues.
+    table = table.with_columns(
+        pl.col("Last Updated")
+        .dt.convert_time_zone("America/Chicago")
+        .cast(pl.Datetime)
+        .alias("Last Updated")
+    )
 
     # Compute the average time for all courses in the dataframe based
     # on the "Last Updated" column.
@@ -353,16 +370,21 @@ def generate_csv_file(table, path, dir=CACHE_DIR):
     rel_path = path[1:]
     parts = rel_path.split('/')
     parts.append(str(avg_time))
-    name = '-'.join(parts) + '.csv'
-    file_path = Path(CACHE_DIR) / name
+    csv_file = '-'.join(parts) + '.csv'
+    csv_path = Path(CACHE_DIR) / csv_file
 
-    # Check if file already exists, if not, write the dataframe to a
-    # CSV file
-    if not file_path.is_file():
-        table.write_csv(file_path)
+    # Check if files already exist, if not, write the dataframe to both
+    # CSV and Excel files.
+    if not csv_path.is_file():
+        table.write_csv(csv_path)
 
-    # Return the name of the CSV file
-    return name
+    # Define formatting and other information for the Excel file
+    excel_file = '-'.join(parts) + '.xlsx'
+    excel_path = Path(CACHE_DIR) / excel_file
+    table.write_excel(excel_path, worksheet=subj_text[:31])
+
+    # Return the names of the files
+    return csv_file, excel_file
 
 
 def common_response(render_me, path, subj_text):
@@ -404,13 +426,21 @@ def common_response(render_me, path, subj_text):
         .to_list()
     )
 
-    # Generate the CSV file corresponding to this data using full
-    # dataset
-    csv_filename = generate_csv_file(render_me, path)
-
     # Get most recent and oldest timestamps from the DataFrame
     most_recent = render_me.select(pl.col('Last Updated')).max().item()
     oldest = render_me.select(pl.col('Last Updated')).min().item()
+
+    # Modify subject text to include the range of terms
+    if len(terms) > 1:
+        # If there are multiple terms, show the first and last terms
+        subj_text = f"{subj_text} Data for {terms[0]} through {terms[-1]}"
+    else:
+        # If there is only one term, just show that term
+        subj_text = f"{subj_text} Data for {terms[0]}"
+
+    # Generate the CSV file corresponding to this data using full
+    # dataset
+    csv_filename, excel_filename = generate_datafiles(render_me, path, subj_text)
 
     #
     # Modify the table to be rendered in the template
@@ -430,7 +460,7 @@ def common_response(render_me, path, subj_text):
     stu_credit_hours = calc_sch(render_me)
     seats = calc_seats(render_me)
     calulcated_tuition = calc_tuition(render_me)
-    
+
     # Convert all the columns with money values to strings with
     # dollar signs and commas for thousands.
     money_cols = [ 'Tuition Resident', 'Tuition Non-Resident',
@@ -455,9 +485,9 @@ def common_response(render_me, path, subj_text):
                            max_rows=max_rows,
                            oldest=oldest,
                            most_recent=most_recent,
-                           year_term=terms,
                            sch=stu_credit_hours,
-                           filename=csv_filename,
+                           csv_file=csv_filename,
+                           excel_file=excel_filename,
                            seats=seats,
                            revenue=calulcated_tuition,
                            base_detail_url=COURSE_DETAIL_URL)

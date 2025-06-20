@@ -1,5 +1,6 @@
 *.pyc
 viewed-csvs
-MIgrationNotes.md
+data
+old_code
 test_script
 test_ipython.txt

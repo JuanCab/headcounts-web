@@ -462,6 +462,11 @@ def process_data_request(render_me, path, subj_text):
     # dataset
     csv_filename, excel_filename = generate_datafiles(render_me, path, subj_text)
 
+    # Compute various statistics for the table
+    stu_credit_hours = calc_sch(render_me)
+    seats = calc_seats(render_me)
+    calulcated_tuition = calc_tuition(render_me)
+
     #
     # Modify the table to be rendered in the template
     #
@@ -475,12 +480,7 @@ def process_data_request(render_me, path, subj_text):
 
     # Rename the 'Fiscal yrtr' column to 'year_term' for clarity
     render_me = render_me.rename({'Fiscal yrtr': 'year_term'})
-
-    # Compute various statistics for the table
-    stu_credit_hours = calc_sch(render_me)
-    seats = calc_seats(render_me)
-    calulcated_tuition = calc_tuition(render_me)
-
+    
     # Convert all the columns with money values to strings with
     # dollar signs and commas for thousands.
     money_cols = [ 'Tuition Resident', 'Tuition Non-Resident',

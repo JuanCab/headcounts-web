@@ -1,5 +1,7 @@
 *.pyc
+backups
 viewed-csvs
+daily_update_script.sh
 data
 old_code
 test_script

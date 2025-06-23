@@ -4,6 +4,7 @@ from pathlib import Path
 import numpy as np
 from flask import render_template
 import polars as pl
+from great_tables import GT, html, style, loc
 import xlsxwriter
 from config import COURSE_DETAIL_URL, CACHE_DIR
 
@@ -423,7 +424,7 @@ def process_data_request(render_me, path, subj_text):
     # Check for an empty DataFrame, if so, return a custom response
     if render_me.is_empty():
         return render_template('no_info.html', subject=subj_text)
-    
+
     # Determine all the unique 'Term' in this polars Dataframe, sorted
     # by Fiscal year/term,
     terms = (
@@ -446,11 +447,11 @@ def process_data_request(render_me, path, subj_text):
     # to display in the rendered template.
     most_recent_dt = render_me.select(pl.col('Last Updated')).max().item()
     most_recent = most_recent_dt.strftime("%I:%M:%S %p on %B %d, %Y")
-    # Get the oldest timestamp, which is the minimum of the 'Last Updated' 
+    # Get the oldest timestamp, which is the minimum of the 'Last Updated'
     # column.
     oldest_dt = render_me.select(pl.col('Last Updated')).min().item()
     if most_recent_dt.date() == oldest_dt.date():
-        # If the oldest is on the same day as the most recent, just show 
+        # If the oldest is on the same day as the most recent, just show
         # the time.
         oldest = oldest_dt.strftime("%I:%M:%S %p")
     else:
@@ -472,8 +473,8 @@ def process_data_request(render_me, path, subj_text):
     if render_me.height > max_rows:
         render_me = render_me.head(max_rows)
 
-    # Drop 'Fiscal yrtr' from the rendered table
-    render_me = render_me.drop(['Fiscal yrtr'])
+    # Rename the 'Fiscal yrtr' column to 'year_term' for clarity
+    render_me = render_me.rename({'Fiscal yrtr': 'year_term'})
 
     # Compute various statistics for the table
     stu_credit_hours = calc_sch(render_me)
@@ -496,9 +497,41 @@ def process_data_request(render_me, path, subj_text):
         pl.col('Last Updated').dt.strftime('%Y-%m-%d %H:%M:%S').alias('Last Updated')
     )
 
+    # Convert the ID # column to HTML links to the course detail
+    # page, using the COURSE_DETAIL_URL defined in config.py.
+    COURSE_DETAIL_URL = 'https://eservices.minnstate.edu/registration/search/detail.html?campusid=072&courseid={course_id}&yrtr={year_term}&rcid=0072&localrcid=0072&partnered=false&parent=search'
+    fmt_string = "<a href='" + COURSE_DETAIL_URL + "'>{course_id}</a>"
+    cleaned_fmt_string = re.sub(r"\{[^}]*\}", "{}", fmt_string)
+
+    # Create a formatted string version of the course ID
+    render_me_alt = render_me.with_columns([
+        pl.col("ID #").cast(pl.Int64).map_elements(lambda x: f"{x:06}",
+                                                   return_dtype=pl.String).alias("course_id_str")
+        ])
+
+    render_me_alt = render_me_alt.with_columns(
+        pl.format(cleaned_fmt_string,
+                  pl.col('course_id_str'),
+                  pl.col('year_term'),
+                  pl.col('course_id_str')
+        ).alias("ID #")
+    )
+
+    # Remove the 'course_id_str' column as it is no longer needed
+    render_me_alt = render_me_alt.drop('course_id_str')
+
+    # Render table using GreatTables
+    rendered_html = (GT(render_me_alt).tab_header(title=subj_text)
+                     .cols_hide(columns="year_term")
+                     .tab_style( style=style.text(size="14px"), locations=loc.body())
+                     .tab_style( style=style.text(size="14px", weight="bold"), locations=loc.column_labels())
+                     .opt_row_striping()
+                     .as_raw_html()
+    )
+
     # Render the page using the 'course_info.html' template,
     return render_template('course_info.html',
-                           table=render_me,
+                           rendered_table=rendered_html,
                            subject=subj_text,
                            n_rows=n_rows,
                            max_rows=max_rows,

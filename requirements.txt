@@ -1,7 +1,8 @@
 dominate
-gunicorn
 flask
 flask-bootstrap
+great_tables
+gunicorn
 jinja2
 polars
 visitor

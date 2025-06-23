@@ -6,7 +6,7 @@ import polars as pl
 from flask import Flask, render_template, request, send_from_directory
 from flask_bootstrap import Bootstrap
 
-from config import CACHE_DIR, DATA_FILE
+from config import CACHE_DIR, PARQUET_DATA
 from utils import filter_data, common_response
 
 # Set up the Flask application to allow URLs that end in slash to be
@@ -49,7 +49,7 @@ def filtered_view(subject, spec1=None, spec2=None):
     # Read the Parquet file containing course enrollment data as a lazy
     # Polars DataFrame. This allows for efficient querying without loading
     # the entire dataset into memory at once.
-    table = pl.read_parquet(DATA_FILE).lazy()
+    table = pl.read_parquet(PARQUET_DATA).lazy()
 
     # Crate a directory for cached CSV files if it does not already exist.
     Path(CACHE_DIR).mkdir(parents=True, exist_ok=True)

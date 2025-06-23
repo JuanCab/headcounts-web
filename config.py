@@ -7,4 +7,20 @@ COURSE_DETAIL_URL = 'https://eservices.minnstate.edu/registration/search/detail.
 CACHE_DIR = 'viewed-csvs'
 
 # Define the data file to use
-DATA_FILE = 'all_enrollments.parquet'
+PARQUET_DATA = 'all_enrollments.parquet'
+
+##
+## These constants are used to set up the data import process
+## in update_data_table.py
+##
+
+# Define path to CSV file for export (must be same as PARQUET_DATA but with
+# .csv extension)
+CSV_DATA = 'all_enrollments.csv'
+
+# Define the directory where setup files are stored defining colleges at 
+# MSUM
+SETUP_DIR = 'msum_setup/'
+
+# Define the directory where backup files are stored
+BACKUP_DIR = 'backups/'

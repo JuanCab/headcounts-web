@@ -22,9 +22,8 @@
 
 import polars as pl
 from datetime import datetime
+from config import CSV_DATA, PARQUET_DATA, SETUP_DIR, BACKUP_DIR
 
-COMPOSITE_CSV = 'all_enrollments.csv'
-BACKUP_DIR = 'backups/'
 
 def add_index_col(df):
     """
@@ -54,7 +53,7 @@ def add_index_col(df):
 
 def main(new_data_file):
     # Load the original data
-    current_df = pl.read_csv(COMPOSITE_CSV)
+    current_df = pl.read_csv(CSV_DATA)
     print(f"Loaded {len(current_df)} entries of current data.")
 
     # Create a backup of the current data using the date and time
@@ -168,7 +167,7 @@ def main(new_data_file):
     )
 
     # Save the updated dataframe to the CSV file
-    result_df.write_csv(COMPOSITE_CSV)
+    result_df.write_csv(CSV_DATA)
 
     #
     # PARQUET FILE PROCESSING
@@ -244,7 +243,7 @@ def main(new_data_file):
     )
 
     # Read in the rubric to college mapping file
-    rubric2college_df = pl.read_csv('msum_setup/Rubric2College.csv')
+    rubric2college_df = pl.read_csv(f'{SETUP_DIR}Rubric2College.csv')
 
     # Map the "Subj" column to the "College" column using the
     # rubric2college_df dataframe
@@ -277,9 +276,8 @@ def main(new_data_file):
     result_df = result_df.rename(rename_map)
 
     # Dump the parquet file
-    parquet_file = COMPOSITE_CSV.replace('.csv', '.parquet')
-    result_df.write_parquet(parquet_file)
-    print(f"Updated data saved to {COMPOSITE_CSV} and {parquet_file}")
+    result_df.write_parquet(PARQUET_DATA)
+    print(f"Updated data saved to {CSV_DATA} and {PARQUET_DATA}")
 
     # Return the resulting dataframe
     return result_df

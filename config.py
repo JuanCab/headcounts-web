@@ -2,6 +2,9 @@
 # The placeholders in the URL will be replaced with actual course data
 COURSE_DETAIL_URL = 'https://eservices.minnstate.edu/registration/search/detail.html?campusid=072&courseid={course_id}&yrtr={year_term}&rcid=0072&localrcid=0072&partnered=false&parent=search'
 
+# Define the source URL for the course data
+COURSE_DATA_SOURCE_URL = 'https://eservices.minnstate.edu/registration/search/basic.html?campusid=072'
+
 # Define the directory where cached CSV files will be stored for 
 # possible download
 CACHE_DIR = 'viewed-csvs'

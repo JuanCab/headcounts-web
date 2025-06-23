@@ -6,8 +6,8 @@ import polars as pl
 from flask import Flask, render_template, request, send_from_directory
 from flask_bootstrap import Bootstrap
 
-from config import CACHE_DIR, PARQUET_DATA
-from utils import filter_data, common_response
+from config import CACHE_DIR, PARQUET_DATA, COURSE_DATA_SOURCE_URL
+from utils import filter_data, process_data_request
 
 # Set up the Flask application to allow URLs that end in slash to be
 # treated the same as those that do not.
@@ -31,7 +31,8 @@ app.logger.setLevel(logging.ERROR)
 def index():
     base_url = request.url_root
     return render_template('instructions.html', 
-                           base_url=base_url)
+                           base_url=base_url,
+                           source_url=COURSE_DATA_SOURCE_URL)
 
 
 # Define the route for the /<subject>/<spec1>/<spec2> URL pattern This
@@ -62,12 +63,12 @@ def filtered_view(subject, spec1=None, spec2=None):
     # to be rendered in the template.
     render_me = filtered_table.collect()
 
-    # Call common_response to render the filtered data in the render_me
+    # Call process_data_request to render the filtered data in the render_me
     # DataFrame and return the response. The request path is passed to
     # common_response to ensure the correct URL is used for the download link.
     # The subj_text is also passed to provide context for the subject 
     # being viewed.
-    return common_response(render_me, request.path, subj_text)
+    return process_data_request(render_me, request.path, subj_text)
 
 
 # Define the route for downloading a cached CSV file

@@ -104,11 +104,13 @@ def filter_data(tbl, subject, spec1=None, spec2=None):
                  .collect()
                  .item()
                  )
+
         # Filter the DataFrame to include only rows with the most recent
-        # year/term.
-        filtered_table = filtered_table.filter(
-            pl.col("Fiscal yrtr") == most_recent
-        )
+        # year/term if most_recent is not None.
+        if most_recent is not None:
+            filtered_table = filtered_table.filter(
+                pl.col("Fiscal yrtr") == most_recent
+            )
     else:
         # Check specifiers (which should be lowercased) and filter the
         # DataFrame accordingly.
@@ -387,10 +389,12 @@ def generate_datafiles(table, path, subj_text, dir=CACHE_DIR):
     return csv_file, excel_file
 
 
-def common_response(render_me, path, subj_text):
+def process_data_request(render_me, path, subj_text):
     """
-    Most of what we are returning is the same for all views,
-    we just have a bunch of routes for getting there.
+    This processes the provided Polars DataFrame of course data,
+    calculates various statistics such as student credit hours,
+    available seats, and tuition revenue, and then renders an HTML
+    template with this information.
 
     Parameters
     ----------
@@ -416,6 +420,10 @@ def common_response(render_me, path, subj_text):
     It also generates a cached CSV file of the data for download.
     """
 
+    # Check for an empty DataFrame, if so, return a custom response
+    if render_me.is_empty():
+        return render_template('no_info.html', subject=subj_text)
+    
     # Determine all the unique 'Term' in this polars Dataframe, sorted
     # by Fiscal year/term,
     terms = (
@@ -426,10 +434,6 @@ def common_response(render_me, path, subj_text):
         .to_list()
     )
 
-    # Get most recent and oldest timestamps from the DataFrame
-    most_recent = render_me.select(pl.col('Last Updated')).max().item()
-    oldest = render_me.select(pl.col('Last Updated')).min().item()
-
     # Modify subject text to include the range of terms
     if len(terms) > 1:
         # If there are multiple terms, show the first and last terms
@@ -437,6 +441,21 @@ def common_response(render_me, path, subj_text):
     else:
         # If there is only one term, just show that term
         subj_text = f"{subj_text} Data for {terms[0]}"
+
+    # Get most recent and oldest timestamps from the DataFrame
+    # to display in the rendered template.
+    most_recent_dt = render_me.select(pl.col('Last Updated')).max().item()
+    most_recent = most_recent_dt.strftime("%I:%M:%S %p on %B %d, %Y")
+    # Get the oldest timestamp, which is the minimum of the 'Last Updated' 
+    # column.
+    oldest_dt = render_me.select(pl.col('Last Updated')).min().item()
+    if most_recent_dt.date() == oldest_dt.date():
+        # If the oldest is on the same day as the most recent, just show 
+        # the time.
+        oldest = oldest_dt.strftime("%I:%M:%S %p")
+    else:
+        # Otherwise, show the full date and time.
+        oldest = oldest_dt.strftime("%I:%M:%S %p on %B %d, %Y")
 
     # Generate the CSV file corresponding to this data using full
     # dataset

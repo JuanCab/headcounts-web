@@ -1,2 +1,6 @@
 *.pyc
 viewed-csvs
+data
+old_code
+test_script
+test_ipython.txt

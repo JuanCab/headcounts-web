@@ -1,7 +1,9 @@
-gunicorn
-astropy
-flask
-jinja2
 dominate
+flask
 flask-bootstrap
+great_tables
+gunicorn
+jinja2
+polars
 visitor
+xlsxwriter

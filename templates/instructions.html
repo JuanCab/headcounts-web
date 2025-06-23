@@ -1,13 +1,19 @@
 {% extends "bootstrap/base.html" %}
+{% block head %}
+  {{ super() }}
+  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+{% endblock %}
+{% block title %}MSUM Course Headcounts Instructions{% endblock %}
 
 {% block content %}
-<<div class="container">
-    <h1>Instructions</h1>
+<div class="container">
+    <h1><img src="static/MSUM-Logo.png" alt="MSUM ">Course Headcounts Instructions</h1>
     <h2>All "navigation" is done by editing the URL in the address bar of your browser.</h2>
 
     <p>The first thing after the site name is one of the items below. If that is the only thing you specify you will see data for the current or upcoming semester (depending on time of semester)</p>
     <ul>
         <li>a subject (e.g. phys or econ, upper or lower case is fine) -- show courses in that subject</li>
+        <li>a college code (allowed codes are 'cbac', 'coah', 'cshe', 'cehs', or 'none')</li>
         <li>all -- show all courses.</li>
         <li>lasc -- shows all lasc courses.</li>
         <li>wi -- show all writing intensive courses.</li>
@@ -24,17 +30,21 @@
     </ul>
     <h2>Examples:</h2>
     <ul>
-        <li><b>Current/upcoming Math courses:</b>  <a href="http://headcounts.herokuapp.com/math">http://headcounts.herokuapp.com/math</a></li>
-        <li><b>Current/upcoming writing-intensive courses:</b> <a href="http://headcounts.herokuapp.com/wi">http://headcounts.herokuapp.com/wi</a></li>
-        <li><b>Math 261:</b> <a href="http://headcounts.herokuapp.com/math/261">http://headcounts.herokuapp.com/math/261</a></li>
-        <li><b>Math 261, Fall 2014 only:</b> <a href="http://headcounts.herokuapp.com/math/261/20153">http://headcounts.herokuapp.com/math/261/20153</a></li>
-        <li><b>Art courses, Fall 2014:</b> <a href="http://headcounts.herokuapp.com/art/20153">http://headcounts.herokuapp.com/art/20153</a></li>
-        <li><b>LASC area 2 courses, Spring 2016:</b> <a href="http://headcounts.herokuapp.com/lasc/2/20165">http://headcounts.herokuapp.com/lasc/2/20165</a></li>
-        <li><b>Everything...all courses, all years:</b> <a href="http://headcounts.herokuapp.com/all">http://headcounts.herokuapp.com/all</a></li>
+        <li><b>Current/upcoming Math courses:</b>  <a href="{{ base_url }}math">{{ base_url }}math</a></li>
+        <li><b>Current/upcoming courses in College of Business, Analytics, and Communication:</b>  <a href="{{ base_url }}cbac">{{ base_url }}cbac</a></li>
+        <li><b>Current/upcoming writing-intensive courses:</b> <a href="{{ base_url }}wi">{{ base_url }}wi</a></li>
+        <li><b>Math 261:</b> <a href="{{ base_url }}math/261">{{ base_url }}math/261</a></li>
+        <li><b>Math 261, Fall 2014 only:</b> <a href="{{ base_url }}math/261/20153">{{ base_url }}math/261/20153</a></li>
+        <li><b>Art courses, Fall 2014:</b> <a href="{{ base_url }}art/20153">{{ base_url }}art/20153</a></li>
+        <li><b>LASC area 2 courses, Spring 2016:</b> <a href="{{ base_url }}lasc/2/20165">{{ base_url }}lasc/2/20165</a></li>
+        <li><b>Everything...all courses, all years:</b> <a href="{{ base_url }}all">{{ base_url }}all</a></li>
     </ul>
 
     <h2>Disclaimer/Data Source</h2>
-    <p>These are NOT real time results. The approximate time that the data was generated is shown above each table. All data is scraped from the public-facing MinnState-maintained course search tool.</p>
+    <p>These are NOT real time results. The approximate time that the data was generated is shown above each table. All data is scraped from <a href="{{ source_url }}">the public-facing MinnState-maintained course search tool</a>.</p>
+
+    <h2>Credit/Blame</h2>
+    <p>The original version of this website was developed by <a href="https://github.com/mwcraig/">Matthew Craig</a>.  It is currently maintained by <a href="https://web.mnstate.edu/cabanela/">Juan Cabanela</a>.</p>
 </div>
 
 {% endblock %}

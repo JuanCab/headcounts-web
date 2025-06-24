@@ -355,6 +355,11 @@ def generate_datafiles(table, path, subj_text, dir=CACHE_DIR):
         specified view.
     """
 
+    # Compute the average time for all courses in the dataframe based
+    # on the "Last Updated" column and format it as a string
+    # representation of the average time in the format YYYYMMDD-HHMMSS.
+    avg_time = table.select(pl.col('Last Updated')).mean().item().strftime("%Y%m%d-%H%M%S")
+
     # Fix "Last Updated" column to be a datetime column without the
     # timezone information, so it can be written to the CSV and Excel
     # files without issues.
@@ -365,14 +370,10 @@ def generate_datafiles(table, path, subj_text, dir=CACHE_DIR):
         .alias("Last Updated")
     )
 
-    # Compute the average time for all courses in the dataframe based
-    # on the "Last Updated" column.
-    avg_time = int(table.select(pl.col('Last Updated')).mean().item().timestamp())
-
     # path always starts with a leading /, remove it
     rel_path = path[1:]
     parts = rel_path.split('/')
-    parts.append(str(avg_time))
+    parts.append(avg_time)
     csv_file = '-'.join(parts) + '.csv'
     csv_path = Path(CACHE_DIR) / csv_file
 

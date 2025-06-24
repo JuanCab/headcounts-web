@@ -82,7 +82,7 @@ def filter_data(tbl, subject, spec1=None, spec2=None):
             (pl.col("LASC/WI").is_not_null()) & (pl.col("LASC/WI") != "WI")
             )
     elif subject == 'wi':
-        filtered_table = tbl.filter(pl.col("LASC/WI") == "WI")
+        filtered_table = tbl.filter(pl.col("LASC/WI").str.contains("WI"))
     elif subject == '18online':
         filtered_table = tbl.filter(pl.col('18online') == True)
     elif subject == 'all':

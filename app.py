@@ -2,20 +2,22 @@ from pathlib import Path
 import logging
 import sys
 import polars as pl
+import os
 
 from flask import Flask, render_template, request, send_from_directory
-from flask_bootstrap import Bootstrap
+from flask_wtf import CSRFProtect
 
 from config import CACHE_DIR, PARQUET_DATA, COURSE_DATA_SOURCE_URL
-from utils import filter_data, process_data_request
+from utils import filter_data, process_data_request, filter_data_advanced
+from models import SearchForm
 
 # Set up the Flask application to allow URLs that end in slash to be
 # treated the same as those that do not.
 app = Flask(__name__, static_folder='static', template_folder='templates')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-fallback-key')
+csrf = CSRFProtect(app)
 app.url_map.strict_slashes = False
 
-# Set up the Flask-Bootstrap extension to use Bootstrap for styling.
-bootstrap = Bootstrap(app)
 
 # Configure logging to output error messages to the console and set
 # the logging level to ERROR to avoid cluttering the console with 
@@ -69,6 +71,53 @@ def filtered_view(subject, spec1=None, spec2=None):
     # The subj_text is also passed to provide context for the subject 
     # being viewed.
     return process_data_request(render_me, request.path, subj_text)
+
+
+@app.route('/search', methods=['GET', 'POST'])
+def search():
+    # This route handles the search functionality. It allows users to
+    # search for courses based on a query string.
+    
+    # If the request method is POST, it means the user has submitted a search
+    # query. The query is extracted from the form data.
+    form = SearchForm()
+    if request.method == 'POST':
+        filters = {}
+        if form.colleges.data:
+            filters['college'] = form.colleges.data
+        if form.subjects.data:
+            filters['department'] = form.subjects.data
+        if form.class_code.data:
+            filters['course_number'] = form.class_code.data
+        if form.lasc_number.data:
+            filters['lasc_area'] = form.lasc_number.data
+        if form.semester.data and form.year.data:
+            # Map semester/year to term code, e.g., 20235 for Fall 2023
+            term_map = {'Spring': '5', 'Summer': '1', 'Fall': '3'}
+            if form.semester.data in term_map and form.year.data:
+                filters['term'] = int(form.year.data + term_map[form.semester.data])
+        if form.writing_intensive.data:
+            filters['wi_only'] = True
+        if form.online_18.data:
+            filters['online_only'] = True
+        if not filters:
+            filters['all_courses'] = True
+
+        # Read the Parquet file containing course enrollment data as a lazy
+        # Polars DataFrame.
+        table = pl.read_parquet(PARQUET_DATA).lazy()
+
+        # Filter the data based on the search query.
+        filtered_table, subj_text = filter_data_advanced(table, **filters)
+
+        # Collect the filtered DataFrame into a regular Polars DataFrame.
+        results = filtered_table.collect()
+
+        return process_data_request(results, request.path, subj_text)
+
+    # If the request method is GET, render the search page without results.
+    return render_template('search.html', form=form)
+
 
 
 # Define the route for downloading a cached CSV file

@@ -1,6 +1,7 @@
 dominate
 flask
 flask-bootstrap
+flask-wtf
 great_tables
 gunicorn
 jinja2

@@ -325,36 +325,11 @@ def generate_datafiles(table, path, subj_text, dir=CACHE_DIR):
     """
     Generates a CSV file and an Excel file containing all the data in
     this dataframe and save it to the cache directory. The filename is
-    generated based on the URL path and the average timestamp of the
+    generated based on the subject text and the average timestamp of the
     courses in the table. The average timestamp is used to ensure that
     the filename is unique for each view, even if the same path is
     accessed multiple times.
-
-    Parameters
-    ----------
-    table : polars Dataframe
-        The polars dataframe containing course data to be cached.
-    path : str
-        The URL path that got the user here, used to generate a unique
-        filename for the cached data.
-    subj_text : str
-        The description of the filtering applied to the table, used to
-        generate Excel worksheet name.
-    dir : str, optional
-        The directory where the CSV file will be saved. Defaults to
-        the CACHE_DIR defined in the config.
-
-    Returns
-    -------
-    str
-        The name of the CSV datafile containing the course data for the
-        specified view.
-
-    str
-        The name of the Excel datafile containing the course data for the
-        specified view.
     """
-
     # Compute the average time for all courses in the dataframe based
     # on the "Last Updated" column and format it as a string
     # representation of the average time in the format YYYYMMDD-HHMMSS.
@@ -370,11 +345,14 @@ def generate_datafiles(table, path, subj_text, dir=CACHE_DIR):
         .alias("Last Updated")
     )
 
-    # path always starts with a leading /, remove it
-    rel_path = path[1:]
-    parts = rel_path.split('/')
-    parts.append(avg_time)
-    csv_file = '-'.join(parts) + '.csv'
+    # Use a sanitized version of subj_text for the filename
+    safe_subj_text = sanitize_excel_sheetname(subj_text).replace(" ", "_")
+    # Optionally, you can further clean up the string if needed
+
+    # Compose the filename
+    filename_base = f"{safe_subj_text}-{avg_time}"
+
+    csv_file = f"{filename_base}.csv"
     csv_path = Path(CACHE_DIR) / csv_file
 
     # Check if files already exist, if not, write the dataframe to both
@@ -383,12 +361,13 @@ def generate_datafiles(table, path, subj_text, dir=CACHE_DIR):
         table.write_csv(csv_path)
 
     # Define formatting and other information for the Excel file
-    excel_file = '-'.join(parts) + '.xlsx'
+    excel_file = f"{filename_base}.xlsx"
     excel_path = Path(CACHE_DIR) / excel_file
-    table.write_excel(excel_path, worksheet=subj_text[:31])
+    table.write_excel(excel_path, worksheet=sanitize_excel_sheetname(subj_text))
 
     # Return the names of the files
     return csv_file, excel_file
+
 
 
 def process_data_request(render_me, path, subj_text):
@@ -544,3 +523,110 @@ def process_data_request(render_me, path, subj_text):
                            seats=seats,
                            revenue=calulcated_tuition,
                            base_detail_url=COURSE_DETAIL_URL)
+
+def filter_data_advanced(tbl, **filters):
+    """
+    Advanced filtering function that accepts multiple filter parameters for form-based filtering.
+    
+    Parameters
+    ----------
+    tbl : polars Lazy DataFrame
+        The table containing course data to be filtered.
+    
+    **filters : dict
+        Filter parameters that can include:
+        - college: str (college code like 'CBAC', 'COAH', etc.)
+        - department: str (department/subject like 'CSCI', 'MATH', etc.)
+        - course_number: str (course number like '241', '101', etc.)
+        - term: str (year/term code like '20231', '20235', etc.)
+        - lasc_area: str (LASC area like '1A', '2B', etc.)
+        - online_only: bool (filter for online courses only)
+        - wi_only: bool (filter for WI courses only)
+        - all_courses: bool (if True, ignore other filters and return all courses)
+    
+    Returns
+    -------
+    polars Lazy DataFrame
+        A Polars LazyFrame with the applied filters.
+    
+    str
+        A string representation of the filters applied.
+    """
+    
+    filtered_table = tbl
+    filter_descriptions = []
+    
+    # Handle 'all_courses' special case
+    if filters.get('all_courses'):
+        filtered_table = filtered_table
+        filter_descriptions.append("All Courses")
+    else:
+        # Apply college filter
+        if filters.get('college'):
+            college = filters['college'].upper()
+            filtered_table = filtered_table.filter(pl.col('College') == college)
+            filter_descriptions.append(f"College: {college}")
+        
+        # Apply department filter
+        if filters.get('department'):
+            department = filters['department'].upper()
+            filtered_table = filtered_table.filter(pl.col('Subj') == department)
+            filter_descriptions.append(f"Department: {department}")
+        
+        # Apply course number filter
+        if filters.get('course_number'):
+            course_num = filters['course_number']
+            filtered_table = filtered_table.filter(pl.col('#') == course_num)
+            filter_descriptions.append(f"Course: {course_num}")
+        
+        # Apply term filter
+        if filters.get('term'):
+            term = int(filters['term'])
+            filtered_table = filtered_table.filter(pl.col('Fiscal yrtr') == term)
+            filter_descriptions.append(f"Term: {term}")
+        
+        # Apply LASC area filter
+        if filters.get('lasc_area'):
+            lasc_area = filters['lasc_area'].upper()
+            filtered_table = filtered_table.filter(pl.col('LASC/WI').str.contains(lasc_area))
+            filter_descriptions.append(f"LASC Area: {lasc_area}")
+        
+        # Apply online courses filter
+        if filters.get('online_only'):
+            filtered_table = filtered_table.filter(pl.col('18online') == True)
+            filter_descriptions.append("Online Courses Only")
+        
+        # Apply WI courses filter
+        if filters.get('wi_only'):
+            filtered_table = filtered_table.filter(pl.col('LASC/WI').str.contains('WI'))
+            filter_descriptions.append("WI Courses Only")
+    
+    # If no filters were applied and not requesting all courses, default to most recent term
+    if not filter_descriptions and not filters.get('all_courses'):
+        most_recent = (filtered_table.select(pl.col("Fiscal yrtr").max())
+                      .collect()
+                      .item())
+        
+        if most_recent is not None:
+            filtered_table = filtered_table.filter(pl.col("Fiscal yrtr") == most_recent)
+            filter_descriptions.append(f"Most Recent Term: {most_recent}")
+    
+    # Generate description text
+    if filter_descriptions:
+        subj_text = " | ".join(filter_descriptions)
+    else:
+        subj_text = "All Courses"
+    
+    # Always sort the output by Fiscal yrtr, Subj, #, and section
+    filtered_table = filtered_table.sort(
+        by=['Fiscal yrtr', 'Subj', '#', 'Sec'],
+        descending=[False, False, False, False]
+    )
+    
+    return filtered_table, subj_text
+
+def sanitize_excel_sheetname(name):
+    # Remove invalid characters and trim to 31 chars
+    invalid = r'[:\\/?*\[\]]'
+    name = re.sub(invalid, '', name)
+    return name[:31]

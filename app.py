@@ -11,7 +11,7 @@ from utils import filter_data, process_data_request
 
 # Set up the Flask application to allow URLs that end in slash to be
 # treated the same as those that do not.
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', template_folder='templates')
 app.url_map.strict_slashes = False
 
 # Set up the Flask-Bootstrap extension to use Bootstrap for styling.

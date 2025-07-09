@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+
+{% block title %}Course Search - Minnesota State University Moorhead{% endblock %}
+
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='custom.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<header class="header-section">
+    <div class="container">
+        <div class="header-content animate-fade-in">
+            <h1>
+                <i class="fas fa-graduation-cap me-3"></i>
+                Course Search System
+            </h1>
+            <p>Find Your Perfect Course - Search by College, Subject, and More</p>
+        </div>
+    </div>
+</header>
+
+<!-- Main Content -->
+<main class="main-content">
+    <div class="content-wrapper">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="row justify-content-center mb-4">
+                    <div class="col-lg-8">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show animate-fade-in" role="alert">
+                                <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'error' %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="row justify-content-center">
+            <div class="col-12 col-xl-10">
+                <div class="search-card animate-fade-in">
+                    <div class="card-header-custom">
+                        <h2><i class="fas fa-search me-3"></i>Course Search</h2>
+                        <p>Discover courses that match your academic interests and requirements</p>
+                    </div>
+                    
+                    <div class="form-container">
+                        <form method="POST" id="courseSearchForm">
+                            {{ form.hidden_tag() }}
+                            
+                            <!-- Special Filters Section -->
+                            <div class="special-filters">
+                                <h4><i class="fas fa-star me-2"></i>Special Course Types</h4>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            {{ form.writing_intensive(class="form-check-input", id="writingIntensive") }}
+                                            {{ form.writing_intensive.label(class="form-check-label") }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            {{ form.online_18(class="form-check-input", id="online18") }}
+                                            {{ form.online_18.label(class="form-check-label") }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="filter-info mt-3" id="specialModeInfo" style="display: none;">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <span id="specialModeText">Special mode active - some filters have been disabled.</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Main Fields Container -->
+                            <div id="mainFields">
+                                <!-- Primary Search Criteria -->
+                                <div class="form-section">
+                                    <h4><i class="fas fa-university"></i>Primary Search Criteria</h4>
+                                    <div class="row g-4">
+                                        <div class="col-md-6">
+                                            {{ form.colleges.label(class="form-label") }}
+                                            {{ form.colleges(class="form-select" + (" is-invalid" if form.colleges.errors else "")) }}
+                                            {% if form.colleges.errors %}
+                                                <div class="invalid-feedback">
+                                                    {% for error in form.colleges.errors %}
+                                                        <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            {{ form.subjects.label(class="form-label") }}
+                                            {{ form.subjects(class="form-select" + (" is-invalid" if form.subjects.errors else "")) }}
+                                            {% if form.subjects.errors %}
+                                                <div class="invalid-feedback">
+                                                    {% for error in form.subjects.errors %}
+                                                        <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Additional Filters -->
+                                <div class="form-section" id="additionalFilters">
+                                    <h4><i class="fas fa-filter"></i>Additional Filters</h4>
+                                    <div class="row g-4">
+                                        <div class="col-md-6">
+                                            {{ form.class_code.label(class="form-label") }}
+                                            {{ form.class_code(class="form-control" + (" is-invalid" if form.class_code.errors else "")) }}
+                                            {% if form.class_code.errors %}
+                                                <div class="invalid-feedback">
+                                                    {% for error in form.class_code.errors %}
+                                                        <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                            <small class="text-muted">Requires subject selection</small>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            {{ form.lasc_number.label(class="form-label") }}
+                                            {{ form.lasc_number(class="form-select") }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Time Period Section (Always Active) -->
+                            <div class="form-section" id="timePeriod">
+                                <h4><i class="fas fa-calendar-alt"></i>Time Period</h4>
+                                <div class="row g-4">
+                                    <div class="col-md-6">
+                                        {{ form.semester.label(class="form-label") }}
+                                        {{ form.semester(class="form-select") }}
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        {{ form.year.label(class="form-label") }}
+                                        {{ form.year(class="form-select") }}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Submit Buttons -->
+                            <div class="text-center mt-4">
+                                <button type="submit" class="btn btn-search">
+                                    <i class="fas fa-search me-2"></i>Search Courses
+                                </button>
+                                <button type="button" class="btn btn-reset" id="resetBtn">
+                                    <i class="fas fa-undo me-2"></i>Reset
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Footer -->
+<footer class="footer-section">
+    <div class="container">
+        <p>&copy; 2025 Minnesota State University Moorhead. All rights reserved.</p>
+    </div>
+</footer>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const writingIntensiveCheckbox = document.getElementById('writingIntensive');
+    const online18Checkbox = document.getElementById('online18');
+    const mainFields = document.getElementById('mainFields');
+    const additionalFilters = document.getElementById('additionalFilters');
+    const specialModeInfo = document.getElementById('specialModeInfo');
+    const specialModeText = document.getElementById('specialModeText');
+    const resetBtn = document.getElementById('resetBtn');
+    const form = document.getElementById('courseSearchForm');
+    
+    // Fields that get disabled in special modes
+    const disableableFields = [
+        'colleges', 'subjects', 'class_code', 'lasc_number'
+    ];
+    
+    function updateFormState(event) {
+        const isWritingIntensive = writingIntensiveCheckbox.checked;
+        const isOnline18 = online18Checkbox.checked;
+        
+        // Mutually exclusive logic - only one special filter can be active
+        if (isWritingIntensive && isOnline18) {
+            // If both are checked, uncheck the other one (last one wins)
+            if (event && event.target === writingIntensiveCheckbox) {
+                online18Checkbox.checked = false;
+            } else if (event && event.target === online18Checkbox) {
+                writingIntensiveCheckbox.checked = false;
+            }
+        }
+        
+        const isSpecialMode = writingIntensiveCheckbox.checked || online18Checkbox.checked;
+        
+        if (isSpecialMode) {
+            // Show special mode info
+            specialModeInfo.style.display = 'block';
+            
+            // Update info text
+            if (writingIntensiveCheckbox.checked) {
+                specialModeText.textContent = 'Searching for Writing Intensive courses - other filters disabled.';
+            } else {
+                specialModeText.textContent = 'Searching for 18 Online courses - other filters disabled.';
+            }
+            
+            // Disable and clear other fields
+            disableableFields.forEach(fieldName => {
+                const field = document.getElementById(fieldName) || document.querySelector(`[name="${fieldName}"]`);
+                if (field) {
+                    field.disabled = true;
+                    if (field.tagName === 'SELECT') {
+                        field.value = '';
+                    } else {
+                        field.value = '';
+                    }
+                }
+            });
+            
+            // Add visual indication
+            additionalFilters.classList.add('disabled');
+            document.querySelector('.form-section').classList.add('disabled');
+            
+        } else {
+            // Hide special mode info
+            specialModeInfo.style.display = 'none';
+            
+            // Enable all fields
+            disableableFields.forEach(fieldName => {
+                const field = document.getElementById(fieldName) || document.querySelector(`[name="${fieldName}"]`);
+                if (field) {
+                    field.disabled = false;
+                }
+            });
+            
+            // Remove visual indication
+            additionalFilters.classList.remove('disabled');
+            document.querySelector('.form-section').classList.remove('disabled');
+        }
+    }
+    
+    // Add event listeners for special mode checkboxes with event parameter
+    writingIntensiveCheckbox.addEventListener('change', function(event) {
+        updateFormState(event);
+    });
+    online18Checkbox.addEventListener('change', function(event) {
+        updateFormState(event);
+    });
+    
+    // Class code validation - require subject selection
+    const classCodeField = document.querySelector('[name="class_code"]');
+    const subjectsField = document.querySelector('[name="subjects"]');
+    
+    if (classCodeField && subjectsField) {
+        classCodeField.addEventListener('input', function() {
+            if (this.value && !subjectsField.value) {
+                this.classList.add('is-invalid');
+                let feedback = this.parentNode.querySelector('.invalid-feedback');
+                if (!feedback) {
+                    feedback = document.createElement('div');
+                    feedback.className = 'invalid-feedback';
+                    this.parentNode.appendChild(feedback);
+                }
+                feedback.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i>Select a subject when using class codes';
+            } else {
+                this.classList.remove('is-invalid');
+                const feedback = this.parentNode.querySelector('.invalid-feedback');
+                if (feedback) {
+                    feedback.remove();
+                }
+            }
+        });
+    }
+    
+    // Reset button functionality
+    resetBtn.addEventListener('click', function() {
+        form.reset();
+        
+        // Reset to default values
+        document.querySelector('[name="semester"]').value = 'Fall';
+        document.querySelector('[name="year"]').value = '2025';
+        
+        updateFormState();
+        
+        // Clear any validation errors
+        document.querySelectorAll('.is-invalid').forEach(field => {
+            field.classList.remove('is-invalid');
+        });
+        document.querySelectorAll('.invalid-feedback').forEach(feedback => {
+            feedback.remove();
+        });
+    });
+    
+    // Initialize form state
+    updateFormState();
+});
+</script>
+{% endblock %}

@@ -2,28 +2,14 @@ from flask_wtf import FlaskForm
 from wtforms import BooleanField, SelectField, StringField, validators
 from wtforms.validators import Optional, Length, ValidationError
 
-class SearchForm(FlaskForm):
-    # Special filters - grouped together
-    writing_intensive = BooleanField('Writing Intensive', default=False)
-    online_18 = BooleanField('18 Online Courses', default=False)
-    
-    # Primary search fields
-    colleges = SelectField(
-        'Colleges',
-        choices=[
+COLLEGES = [
             ('', 'Select a College'),
             ('CBAC', 'College of Business, Analytics, & Communication'),
             ('COAH', 'College of Arts and Humanities'),
             ('CSHE', 'College of Science, Health, & the Environment'),
             ('CEHS', 'College of Education and Human Services')
-        ],
-        validators=[Optional()],
-        default=''
-    )
-    
-    subjects = SelectField(
-        'Subjects',
-        choices=[
+        ]
+SUBJECTS = [
             ('', 'Select a Subject'),
             ('ACCT', 'Accounting'),
             ('AEM', 'Audio Production & Entertainment Management'),
@@ -101,7 +87,28 @@ class SearchForm(FlaskForm):
             ('THTR', 'Theatre Arts'),
             ('UNIV', 'University Studies'),
             ('WS', 'Women\'s Studies')
-        ],
+        ]
+
+# Build the year choices, then reverse for display (latest year first)
+YEAR_CHOICES = [('', 'All Years')] + [(str(year + 1), str(year)) for year in range(2014, 2026)]
+YEAR_CHOICES[1:] = YEAR_CHOICES[1:][::-1]  # Reverse only the years, keep "All Years" on top
+
+class SearchForm(FlaskForm):
+    # Special filters - grouped together
+    writing_intensive = BooleanField('Writing Intensive', default=False)
+    online_18 = BooleanField('18 Online Courses', default=False)
+    
+    # Primary search fields
+    colleges = SelectField(
+        'Colleges',
+        choices= COLLEGES,
+        validators=[Optional()],
+        default=''
+    )
+    
+    subjects = SelectField(
+        'Subjects',
+        choices= SUBJECTS,
         validators=[Optional()],
         default=''
     )
@@ -109,7 +116,7 @@ class SearchForm(FlaskForm):
     # Additional filters
     class_code = StringField(
         'Class Code',
-        validators=[Optional(), Length(min=3, max=5, message="Class code must be 3-5 characters")],
+        validators=[Optional(), Length(min=3, max=4, message="Class code must be 3-4 characters")],
         render_kw={"placeholder": "e.g., 241"}
     )
     
@@ -130,14 +137,14 @@ class SearchForm(FlaskForm):
             ('Spring', 'Spring')
         ],
         validators=[Optional()],
-        default='Fall'
+        default=''
     )
     
     year = SelectField(
         'Year',
-        choices=[('', 'All Years')] + [(str(year), str(year)) for year in range(2014, 2026)],
+        choices=YEAR_CHOICES,
         validators=[Optional()],
-        default='2025'
+        default=''
     )
     
     def validate(self, extra_validators=None):
@@ -147,7 +154,6 @@ class SearchForm(FlaskForm):
         # Check for Spring 2014 - we don't have data for this
         if self.semester.data == 'Spring' and self.year.data == '2014':
             self.semester.errors.append('Spring 2014 data is not available. Data starts from Fall 2014.')
-            self.year.errors.append('Spring 2014 data is not available. Data starts from Fall 2014.')
             return False
         
         # Class codes require subject selection

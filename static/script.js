@@ -129,4 +129,28 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize form state
     updateFormState();
+    
+    form.addEventListener('submit', function(e) {
+        // Get values of main filters
+        const college = form.colleges ? form.colleges.value : '';
+        const subject = form.subjects ? form.subjects.value : '';
+        const classCode = form.class_code ? form.class_code.value : '';
+        const lasc = form.lasc_number ? form.lasc_number.value : '';
+        const semester = form.semester ? form.semester.value : '';
+        const year = form.year ? form.year.value : '';
+        const writingIntensive = form.writing_intensive ? form.writing_intensive.checked : false;
+        const online18 = form.online_18 ? form.online_18.checked : false;
+
+        // If no filters are selected (customize as needed)
+        if (
+            !college && !subject && !classCode && !lasc &&
+            !semester && !year &&
+            !writingIntensive && !online18
+        ) {
+            const proceed = confirm("Showing all courses - apply filters to narrow results. Continue?");
+            if (!proceed) {
+                e.preventDefault();
+            }
+        }
+    });
 });

@@ -21,6 +21,8 @@
     </div>
 </header>
 
+{{ super() }}
+
 <!-- Main Content -->
 <main class="main-content">
     <div class="content-wrapper">
@@ -139,6 +141,13 @@
                                     <div class="col-md-6">
                                         {{ form.semester.label(class="form-label") }}
                                         {{ form.semester(class="form-select") }}
+                                        {% if form.semester.errors %}
+                                            <div class="invalid-feedback">
+                                                {% for error in form.semester.errors %}
+                                                    <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
                                     </div>
                                     
                                     <div class="col-md-6">

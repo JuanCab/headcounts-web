@@ -4,7 +4,7 @@ import sys
 import polars as pl
 import os
 
-from flask import Flask, render_template, request, send_from_directory
+from flask import Flask, render_template, request, send_from_directory, flash, redirect, url_for
 from flask_wtf import CSRFProtect
 
 from config import CACHE_DIR, PARQUET_DATA, COURSE_DATA_SOURCE_URL
@@ -72,7 +72,7 @@ def filtered_view(subject, spec1=None, spec2=None):
     # being viewed.
     return process_data_request(render_me, request.path, subj_text)
 
-
+# @app.route('/', methods=['GET', 'POST'])
 @app.route('/search', methods=['GET', 'POST'])
 def search():
     # This route handles the search functionality. It allows users to
@@ -83,37 +83,45 @@ def search():
     form = SearchForm()
     if request.method == 'POST':
         filters = {}
-        if form.colleges.data:
-            filters['college'] = form.colleges.data
-        if form.subjects.data:
-            filters['department'] = form.subjects.data
-        if form.class_code.data:
-            filters['course_number'] = form.class_code.data
-        if form.lasc_number.data:
-            filters['lasc_area'] = form.lasc_number.data
-        if form.semester.data and form.year.data:
-            # Map semester/year to term code, e.g., 20235 for Fall 2023
-            term_map = {'Spring': '5', 'Summer': '1', 'Fall': '3'}
-            if form.semester.data in term_map and form.year.data:
-                filters['term'] = int(form.year.data + term_map[form.semester.data])
-        if form.writing_intensive.data:
-            filters['wi_only'] = True
-        if form.online_18.data:
-            filters['online_only'] = True
-        if not filters:
-            filters['all_courses'] = True
+        if form.validate_on_submit():
+            # If the form is valid, extract the filters from the form data.
+            if not form.has_filters():
+                filters['all_courses'] = True
+            else:
+                if form.colleges.data:
+                    filters['college'] = form.colleges.data
+                if form.subjects.data:
+                    filters['department'] = form.subjects.data
+                if form.class_code.data:
+                    filters['course_number'] = form.class_code.data
+                if form.lasc_number.data:
+                    filters['lasc_area'] = form.lasc_number.data
+                if form.semester.data and form.year.data:
+                    # Map semester/year to term code, e.g., 20235 for Fall 2023
+                    term_map = {'Spring': '5', 'Summer': '1', 'Fall': '3'}
+                    if form.semester.data in term_map and form.year.data:
+                        filters['term'] = int(form.year.data + term_map[form.semester.data])
+                if form.writing_intensive.data:
+                    filters['wi_only'] = True
+                if form.online_18.data:
+                    filters['online_only'] = True
+                
+                
 
-        # Read the Parquet file containing course enrollment data as a lazy
-        # Polars DataFrame.
-        table = pl.read_parquet(PARQUET_DATA).lazy()
+            # Read the Parquet file containing course enrollment data as a lazy
+            # Polars DataFrame.
+            table = pl.read_parquet(PARQUET_DATA).lazy()
 
-        # Filter the data based on the search query.
-        filtered_table, subj_text = filter_data_advanced(table, **filters)
+            # Filter the data based on the search query.
+            filtered_table, subj_text = filter_data_advanced(table, **filters)
 
-        # Collect the filtered DataFrame into a regular Polars DataFrame.
-        results = filtered_table.collect()
+            # Collect the filtered DataFrame into a regular Polars DataFrame.
+            results = filtered_table.collect()
 
-        return process_data_request(results, request.path, subj_text)
+            return process_data_request(results, request.path, subj_text)
+        else:
+            # Form validation failed
+            flash("Please correct the errors below", "error")
 
     # If the request method is GET, render the search page without results.
     return render_template('search.html', form=form)

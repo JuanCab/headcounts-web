@@ -1,12 +1,12 @@
 import re
 from pathlib import Path
 
-import numpy as np
+from config import CACHE_DIR, COURSE_DETAIL_URL
 from flask import render_template
+from great_tables import GT, html, loc, style
+import numpy as np
 import polars as pl
-from great_tables import GT, html, style, loc
 import xlsxwriter
-from config import COURSE_DETAIL_URL, CACHE_DIR
 
 #
 # This is an importable file of utility functions for the Flask app.
@@ -527,35 +527,32 @@ def process_data_request(render_me, path, subj_text):
 def filter_data_advanced(tbl, **filters):
     """
     Advanced filtering function that accepts multiple filter parameters for form-based filtering.
-    
+
     Parameters
     ----------
     tbl : polars Lazy DataFrame
         The table containing course data to be filtered.
-    
     **filters : dict
         Filter parameters that can include:
-        - college: str (college code like 'CBAC', 'COAH', etc.)
-        - subject: str (subject like 'CSCI', 'MATH', etc.)
-        - course_number: str (course number like '241', '101', etc.)
-        - term: str (year/term code like '20231', '20235', etc.)
-        - lasc_area: str (LASC area like '1A', '2B', etc.)
-        - online_only: bool (filter for online courses only)
-        - wi_only: bool (filter for WI courses only)
-        - all_courses: bool (if True, ignore other filters and return all courses)
-    
+            - college: str (college code like 'CBAC', 'COAH', etc.)
+            - subject: str (subject like 'CSCI', 'MATH', etc.)
+            - course_number: str (course number like '241', '101', etc.)
+            - term: str (year/term code like '20231', '20235', etc.)
+            - lasc_area: str (LASC area like '1A', '2B', etc.)
+            - online_only: bool (filter for online courses only)
+            - wi_only: bool (filter for WI courses only)
+            - all_courses: bool (if True, ignore other filters and return all courses)
+
     Returns
     -------
     polars Lazy DataFrame
         A Polars LazyFrame with the applied filters.
-    
     str
         A string representation of the filters applied.
     """
-    
     filtered_table = tbl
     filter_descriptions = []
-    
+
     # Handle 'all_courses' special case
     if filters.get('all_courses'):
         filtered_table = filtered_table
@@ -566,58 +563,46 @@ def filter_data_advanced(tbl, **filters):
             college = filters['college'].upper()
             filtered_table = filtered_table.filter(pl.col('College') == college)
             filter_descriptions.append(f"College: {college}")
-        
         # Apply subject filter
         if filters.get('subject'):
             subject = filters['subject'].upper()
             filtered_table = filtered_table.filter(pl.col('Subj') == subject)
             filter_descriptions.append(f"Subject: {subject}")
-
         # Apply course number filter
         if filters.get('course_number'):
             course_num = filters['course_number']
             filtered_table = filtered_table.filter(pl.col('#') == course_num)
             filter_descriptions.append(f"Course: {course_num}")
-        
         # Apply term filter
         if filters.get('term'):
             term = int(filters['term'])
             filtered_table = filtered_table.filter(pl.col('Fiscal yrtr') == term)
             # filter_descriptions.append(f"Term: {term}")
-        
         # Apply LASC area filter
         if filters.get('lasc_area'):
             lasc_area = filters['lasc_area'].upper()
             filtered_table = filtered_table.filter(pl.col('LASC/WI').str.contains(lasc_area))
             filter_descriptions.append(f"LASC Area: {lasc_area}")
-        
         # Apply online courses filter
         if filters.get('online_only'):
             filtered_table = filtered_table.filter(pl.col('18online') == True)
             filter_descriptions.append("Online Courses Only")
-        
         # Apply WI courses filter
         if filters.get('wi_only'):
             filtered_table = filtered_table.filter(pl.col('LASC/WI').str.contains('WI'))
             filter_descriptions.append("WI Courses Only")
-        
-    
-    # Generate description text
-    if filter_descriptions:
-        subj_text = " | ".join(filter_descriptions)
-    else:
-        subj_text = "All Courses"
-    
-    # Always sort the output by Fiscal yrtr, Subj, #, and section
+
+    subj_text = " | ".join(filter_descriptions) if filter_descriptions else "All Courses"
     filtered_table = filtered_table.sort(
         by=['Fiscal yrtr', 'Subj', '#', 'Sec'],
         descending=[False, False, False, False]
     )
-    
     return filtered_table, subj_text
 
 def sanitize_excel_sheetname(name):
-    # Remove invalid characters and trim to 31 chars
+    """
+    Sanitize a string to be a valid Excel sheet name (max 31 chars, no invalid chars).
+    """
     invalid = r'[:\\/?*\[\]]'
     name = re.sub(invalid, '', name)
     return name[:31]

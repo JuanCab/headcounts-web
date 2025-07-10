@@ -1,18 +1,15 @@
-from pathlib import Path
 import logging
-import sys
-import polars as pl
 import os
+import sys
+from pathlib import Path
 
-from flask import Flask, render_template, request, send_from_directory, flash, redirect, url_for
+from config import CACHE_DIR, COURSE_DATA_SOURCE_URL, PARQUET_DATA
+from flask import Flask, flash, redirect, render_template, request, send_from_directory, url_for
 from flask_wtf import CSRFProtect
-
-from config import CACHE_DIR, PARQUET_DATA, COURSE_DATA_SOURCE_URL
-from utils import filter_data, process_data_request, filter_data_advanced
+import polars as pl
 from models import SearchForm
+from utils import filter_data, filter_data_advanced, process_data_request
 
-# Set up the Flask application to allow URLs that end in slash to be
-# treated the same as those that do not.
 app = Flask(__name__, static_folder='static', template_folder='templates')
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-fallback-key')
 csrf = CSRFProtect(app)
@@ -25,25 +22,17 @@ app.url_map.strict_slashes = False
 app.logger.addHandler(logging.StreamHandler(sys.stdout))
 app.logger.setLevel(logging.ERROR)
 
-# Content processor for sourse URL
-# This makes the COURSE_DATA_SOURCE_URL variable available in all
-# templates without having to pass it explicitly each time
+
 @app.context_processor
 def inject_source_url():
+    """Make COURSE_DATA_SOURCE_URL available in all templates."""
     return dict(source_url=COURSE_DATA_SOURCE_URL)
 
-# Define the route for the root URL of the application This route serves
-# the instructions page when the user accesses the root URL It renders
-# the 'instructions.html' template, which contains information on how to
-# use the application
 @app.route('/')
 def index():
-    return redirect (url_for('search'))
+    """Redirect root URL to the search page."""
+    return redirect(url_for('search'))
 
-
-# Define the route for the /<subject>/<spec1>/<spec2> URL pattern This
-# route handles requests for specific subjects and specifications It can
-# accept up to two specifications (spec1 and spec2) after the subject
 @app.route('/<subject>')
 @app.route('/<subject>/<spec1>')
 @app.route('/<subject>/<spec1>/<spec2>')
@@ -76,14 +65,9 @@ def filtered_view(subject, spec1=None, spec2=None):
     # being viewed.
     return process_data_request(render_me, request.path, subj_text)
 
-# @app.route('/', methods=['GET', 'POST'])
 @app.route('/search', methods=['GET', 'POST'])
 def search():
-    # This route handles the search functionality. It allows users to
-    # search for courses based on a query string.
-    
-    # If the request method is POST, it means the user has submitted a search
-    # query. The query is extracted from the form data.
+    """Search for courses using the form."""
     form = SearchForm()
     if request.method == 'POST':
         filters = {}
@@ -147,7 +131,5 @@ def download(filename):
     # https://stackoverflow.com/questions/34009980/return-a-download-and-rendered-page-in-one-flask-response
     return send_from_directory(CACHE_DIR, filename)
 
-
-# Define the application entry point
 if __name__ == '__main__':
     app.run(debug=True)

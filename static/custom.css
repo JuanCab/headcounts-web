@@ -6,7 +6,7 @@
     --msu-gold: #FFD700;
     --msu-light-background: rgba(255, 255, 255, 0.9);
     --gradient-primary: linear-gradient(135deg, #633a3a 0%, #333333 100%);
-    --gradient-background: linear-gradient(145deg, #ffffff 20%, #C8102E 100%);
+    --gradient-background: linear-gradient(145deg, #ffffff 20%, #b41b34 100%);
 }
 
 * {
@@ -22,6 +22,13 @@ body {
     color: var(--msu-black);
     line-height: 1.6;
 }
+
+.page-wrapper {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
 
 /* Header Styles */
 .header-section {
@@ -60,6 +67,7 @@ body {
 .main-content {
     padding: 2rem 0;
     min-height: calc(100vh - 200px);
+    flex: 1 0 auto;
 }
 
 .content-wrapper {
@@ -70,11 +78,12 @@ body {
 
 /* Footer */
 .site-footer {
+    width: 100%;
+    margin:auto auto 0 auto;
     background: #f8f9fa;
     color: #6c757d;
     font-size: 0.97rem;
     border-top: 1px solid #e5e5e5;
-    margin-top: 3rem;
     padding-top: 1.5rem;
     padding-bottom: 1.5rem;
 }
@@ -425,8 +434,15 @@ table, th, td {
 }
 
 @media (max-width: 576px) {
+    .header-content {
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center;
+    }
+
+
     .header-content h1 {
-        font-size: 1.4rem;
+        font-size: 1.3rem;
     }
     
     .card-header-custom h2 {

@@ -113,8 +113,8 @@ document.addEventListener('DOMContentLoaded', function() {
         form.reset();
         
         // Reset to default values
-        document.querySelector('[name="semester"]').value = 'Fall';
-        document.querySelector('[name="year"]').value = '2025';
+        document.querySelector('[name="semester"]').value = '';
+        document.querySelector('[name="year"]').value = '';
         
         updateFormState();
         

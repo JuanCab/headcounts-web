@@ -1,21 +1,11 @@
-@font-face {
-    font-family: 'ScalaSansWeb';
-    src: url('/static/fonts/ScalaSansWeb-Regular.woff2') format('woff2'),
-         url('/static/fonts/ScalaSansWeb-Regular.woff') format('woff');
-    font-weight: normal;
-    font-style: normal;
-}
-
 :root {
-    --msu-red: #D10000;
-    --msu-dark-red: rgb(200, 16, 46);
+    --msu-red: rgb(200,16,46);
     --msu-black: #1a1a1a;
     --msu-gray: #333333;
     --msu-light-gray: #a2aeba;
     --msu-gold: #FFD700;
     --msum-light-background: rgba(0,0,0,0.5);
-    --gradient-primary: linear-gradient(135deg, #c8102e 0%, #c8102e 100%);
-    --gradient-secondary: linear-gradient(135deg, #1a1a1a 0%, #333333 100%);
+    --gradient-primary: linear-gradient(135deg, #1a1a1a 0%, #333333 100%);
     --gradient-background: linear-gradient(135deg, #ffffff 0%, #000000 100%);
 }
 
@@ -26,7 +16,7 @@
 }
 
 body {
-    font-family: 'ScalaSansWeb', Arial, sans-serif;
+    font-family: 'Tinos', Arial, sans-serif;
     background: var(--gradient-background);
     min-height: 100vh;
     color: var(--msu-black);
@@ -52,7 +42,7 @@ body {
 .header-content h1, .header-content .logo {
     font-size: 2.25rem;
     font-weight: 475;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.3rem;
     text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
 }
 
@@ -218,29 +208,28 @@ body {
     margin-top: 0.2rem;
     border: 2px solid #dee2e6;
     border-radius: 4px;
+    margin-right: 10px;
 }
 
-.form-check-input:checked {
-    background-color: var(--msu-red);
-    border-color: var(--msu-red);
-}
 
-.form-check-input:focus {
+.form-check-label:hover {
     border-color: var(--msu-red);
     box-shadow: 0 0 0 0.2rem rgba(209, 0, 0, 0.15);
 }
 
 .form-check-label {
+    margin-bottom: -20px;
     font-size: 0.95rem;
     font-weight: 500;
     color: var(--msu-gray);
     margin-left: 0.5rem;
+    transition: all 0.3s ease;
 }
 
 /* Buttons */
-.btn-search {
+.btn-search, .btn-reset {
     background: rgb(255, 255, 255);
-    color: var(--msu-dark-red);
+    color: var(--msu-red);
     border: none;
     padding: 1rem 2.5rem;
     font-size: 1.1rem;
@@ -262,15 +251,11 @@ body {
 }
 
 .btn-reset {
-    background: var(--gradient-secondary);
-    color: white;
-    border: none;
     padding: 0.8rem 1.5rem;
     font-size: 1rem;
     font-weight: 500;
     border-radius: 0.125em;
-    transition: all 0.3s ease;
-    margin-left: 1rem;
+    margin-left: 1.5rem;
 }
 
 .btn-reset:hover {
@@ -295,7 +280,7 @@ body {
 
 /* Special Filters */
 .special-filters {
-    background: var(--gradient-primary);
+    background: var(--msu-red);
     border-radius: 12px;
     padding: 1.5rem;
     margin-bottom: 2rem;
@@ -348,6 +333,42 @@ body {
 table, th, td {
    border: 1px solid black;
    padding: 2px;
+}
+
+/* Results Header */
+.results-header {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 2rem;
+    border-left: 4px solid var(--msu-red);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.results-header h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--msu-red);
+    margin-bottom: 0.5rem;
+}
+
+.results-subtext {
+    font-size: 1.05rem;
+    color: #555;
+    margin-top: 0.5rem;
+    line-height: 1.5;
+    padding-left: 0.2rem;
+}
+
+.results-subtext-block {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    margin-bottom: 1.5rem;
+    font-size: 1.08rem;
+    color: #444;
+    border-left: 4px solid var(--msu-red);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
 }
 
 /* Responsive Design */

@@ -403,7 +403,7 @@ def process_data_request(render_me, path, subj_text):
 
     # Check for an empty DataFrame, if so, return a custom response
     if render_me.is_empty():
-        return render_template('no_info.html', subject=subj_text)
+        return render_template('results.html', subject=subj_text, n_rows=0)
 
     # Determine all the unique 'Term' in this polars Dataframe, sorted
     # by Fiscal year/term,
@@ -509,8 +509,8 @@ def process_data_request(render_me, path, subj_text):
                      .as_raw_html()
     )
 
-    # Render the page using the 'course_info.html' template,
-    return render_template('course_info.html',
+    # Render the page using the 'results.html' template,
+    return render_template('results.html',
                            rendered_table=rendered_html,
                            subject=subj_text,
                            n_rows=n_rows,
@@ -600,16 +600,7 @@ def filter_data_advanced(tbl, **filters):
         if filters.get('wi_only'):
             filtered_table = filtered_table.filter(pl.col('LASC/WI').str.contains('WI'))
             filter_descriptions.append("WI Courses Only")
-    
-    # If no filters were applied and not requesting all courses, default to most recent term
-    if not filter_descriptions and not filters.get('all_courses'):
-        most_recent = (filtered_table.select(pl.col("Fiscal yrtr").max())
-                      .collect()
-                      .item())
         
-        if most_recent is not None:
-            filtered_table = filtered_table.filter(pl.col("Fiscal yrtr") == most_recent)
-            filter_descriptions.append(f"Most Recent Term: {most_recent}")
     
     # Generate description text
     if filter_descriptions:

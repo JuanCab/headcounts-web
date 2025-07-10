@@ -25,16 +25,20 @@ app.url_map.strict_slashes = False
 app.logger.addHandler(logging.StreamHandler(sys.stdout))
 app.logger.setLevel(logging.ERROR)
 
+# Content processor for sourse URL
+# This makes the COURSE_DATA_SOURCE_URL variable available in all
+# templates without having to pass it explicitly each time
+@app.context_processor
+def inject_source_url():
+    return dict(source_url=COURSE_DATA_SOURCE_URL)
+
 # Define the route for the root URL of the application This route serves
 # the instructions page when the user accesses the root URL It renders
 # the 'instructions.html' template, which contains information on how to
 # use the application
 @app.route('/')
 def index():
-    base_url = request.url_root
-    return render_template('instructions.html', 
-                           base_url=base_url,
-                           source_url=COURSE_DATA_SOURCE_URL)
+    return redirect (url_for('search'))
 
 
 # Define the route for the /<subject>/<spec1>/<spec2> URL pattern This

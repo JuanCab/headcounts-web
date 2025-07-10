@@ -4,7 +4,7 @@
 
 {% block head %}
 {{ super() }}
-<link rel="stylesheet" href="{{ url_for('static', filename='custom.css') }}">
+
 {% endblock %}
 
 {% block content %}
@@ -41,18 +41,22 @@
                             
                             <!-- Special Filters Section -->
                             <div class="special-filters">
-                                <h4><i class="fas fa-star"></i>Special Course Types</h4>
+                                <h4><i class="fas fa-star"></i> Special Filters</h4>
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-check">
-                                            {{ form.writing_intensive(class="form-check-input", id="writingIntensive") }}
-                                            {{ form.writing_intensive.label(class="form-check-label") }}
+                                            <label class="form-check-label w-100" style="cursor:pointer;">
+                                                {{ form.writing_intensive(class="form-check-input", id="writingIntensive") }}
+                                                {{ form.writing_intensive.label.text }}
+                                            </label>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-check">
-                                            {{ form.online_18(class="form-check-input", id="online18") }}
-                                            {{ form.online_18.label(class="form-check-label") }}
+                                            <label class="form-check-label w-100" style="cursor:pointer;">
+                                                {{ form.online_18(class="form-check-input", id="online18") }}
+                                                {{ form.online_18.label.text }}
+                                            </label>
                                         </div>
                                     </div>
                                 </div>

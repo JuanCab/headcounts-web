@@ -4,9 +4,9 @@
     --msu-gray: #333333;
     --msu-light-gray: #a2aeba;
     --msu-gold: #FFD700;
-    --msum-light-background: rgba(0,0,0,0.5);
-    --gradient-primary: linear-gradient(135deg, #1a1a1a 0%, #333333 100%);
-    --gradient-background: linear-gradient(135deg, #ffffff 0%, #000000 100%);
+    --msu-light-background: rgba(255, 255, 255, 0.9);
+    --gradient-primary: linear-gradient(135deg, #633a3a 0%, #333333 100%);
+    --gradient-background: linear-gradient(145deg, #ffffff 20%, #C8102E 100%);
 }
 
 * {
@@ -25,9 +25,9 @@ body {
 
 /* Header Styles */
 .header-section {
-    background: var(--msum-light-background);
-    color: white;
-    padding: 1.5rem 0;
+    background: var(--msu-light-background);
+    color: var(--msu-black);
+    padding: 0.5rem 0;
     box-shadow: 0 4px 20px rgba(0,0,0,0.1);
     border-bottom: 3px solid var(--msu-gold);
 }
@@ -123,7 +123,7 @@ body {
 
 .card-header-custom {
     background: var(--gradient-secondary);
-    color: white;
+    color: var(--msu-red);
     padding: 2rem;
     text-align: center;
     border-bottom: 2px solid var(--msu-red);
@@ -419,6 +419,9 @@ table, th, td {
         margin-left: 0;
         margin-top: 0.8rem;
     }
+    .w-md-auto {
+        width: 100% !important;
+    }
 }
 
 @media (max-width: 576px) {
@@ -438,6 +441,9 @@ table, th, td {
     .btn-search, .btn-reset {
         width: 100%;
         margin: 0.4rem 0;
+    }
+    .w-md-auto {
+        width: 100% !important;
     }
 }
 

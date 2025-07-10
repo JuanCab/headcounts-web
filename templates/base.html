@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Tinos:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='custom.css') }}">
-    <link href="{{ url_for('static', filename='favicon.ico') }}" rel="icon" >
+    <link href="{{ url_for('static', filename='images/favicon1.ico') }}" rel="icon" >
     {% block head %}  {% endblock %}
 </head>
 <body>
@@ -17,7 +17,7 @@
     <header class="header-section">
         <div class="container">
             <div class="header-content animate-fade-in">
-                <img src="{{ url_for('static', filename='MSUM-Logo.png') }}" alt="Logo" class="logo">
+                <img src="{{ url_for('static', filename='/images/MSUM-Logo.png') }}" alt="Logo" class="logo">
                 <h1>
                     <i class="fas fa-graduation-cap me-2"></i>
                     Course Headcounts

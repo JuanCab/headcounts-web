@@ -152,7 +152,7 @@ class SearchForm(FlaskForm):
             return False
         
         # Check for Spring 2014 - we don't have data for this
-        if self.semester.data == 'Spring' and self.year.data == '2014':
+        if self.semester.data == 'Spring' and self.year.data == '2015':
             self.semester.errors.append('Spring 2014 data is not available. Data starts from Fall 2014.')
             return False
         

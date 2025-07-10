@@ -101,10 +101,14 @@ def search():
                 if form.lasc_number.data:
                     filters['lasc_area'] = form.lasc_number.data
                 if form.semester.data and form.year.data:
-                    # Map semester/year to term code, e.g., 20235 for Fall 2023
                     term_map = {'Spring': '5', 'Summer': '1', 'Fall': '3'}
                     if form.semester.data in term_map and form.year.data:
-                        filters['term'] = int(form.year.data + term_map[form.semester.data])
+                        year = int(form.year.data)
+                        term_digit = term_map[form.semester.data]
+                        # For Spring, subtract 1 from the year
+                        if form.semester.data == 'Spring':
+                            year -= 1
+                        filters['term'] = int(str(year) + term_digit)
                 if form.writing_intensive.data:
                     filters['wi_only'] = True
                 if form.online_18.data:
@@ -126,6 +130,7 @@ def search():
         else:
             # Form validation failed
             flash("Please correct the errors below", "error")
+            return render_template('search.html', form=form)
 
     # If the request method is GET, render the search page without results.
     return render_template('search.html', form=form)

@@ -11,7 +11,38 @@ from models import SearchForm
 from utils import filter_data, filter_data_advanced, process_data_request
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-fallback-key')
+
+def get_secret_key():
+    """
+    Retrieve the Flask SECRET_KEY for session and CSRF protection.
+
+    This function first attempts to get the secret key from the environment variable 'SECRET_KEY'.
+    If the environment variable is not set, it falls back to reading the key from a local file named '.flask_secret_key'.
+    This file should be excluded from version control (e.g., listed in .gitignore) to prevent accidental exposure of secrets.
+
+    Raises:
+        RuntimeError: If neither the environment variable nor the file is found, indicating that the secret key is missing.
+
+    Returns:
+        str: The secret key string to be used by Flask for cryptographic operations.
+
+    Security Note:
+        The secret key is required for securely signing session cookies and CSRF tokens.
+        Never hardcode the secret key in source code or commit it to version control.
+        Always use a strong, random value for production deployments.
+    """
+    # Try environment variable first
+    key = os.environ.get('SECRET_KEY')
+    if key:
+        return key
+    # Fallback: read from a file (not tracked by git)
+    try:
+        with open('.flask_secret_key') as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        raise RuntimeError("SECRET_KEY not set and .flask_secret_key file not found!")
+    
+app.config['SECRET_KEY'] = get_secret_key()
 csrf = CSRFProtect(app)
 app.url_map.strict_slashes = False
 

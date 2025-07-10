@@ -4,19 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Minnesota State University Moorhead{% endblock %}</title>
-    
+    <link href="{{ url_for('static', filename='favicon.ico') }}" rel="icon" >
     <!-- Bootstrap CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
-    {% block head %}{% endblock %}
+    {% block head %}  {% endblock %}
 </head>
 <body>
+    <!-- Header -->
+    <header class="header-section">
+        <div class="container">
+            <div class="header-content animate-fade-in">
+                <img src="{{ url_for('static', filename='MSUM-Logo.png') }}" alt="Logo" class="logo">
+                <h1>
+                    <i class="fas fa-graduation-cap me-2"></i>
+                    Course Headcounts
+                </h1>
+            </div>
+        </div>
+    </header>
     {% block content %}{% endblock %}
+
+    <!-- Footer -->
+    <footer class="site-footer border-top mt-5 py-4">
+        <div class="container">
+            <div class="row align-items-center text-muted">
+                <div class="col-md-8 mb-2 mb-md-0">
+                    <small>
+                        Powered by <a href="https://github.com/mwcraig/headcounts-web" target="_blank">headcounts-web</a> &mdash;
+                        A <a href="http://flask.pocoo.org/" target="_blank">Flask</a> app styled with
+                        <a href="https://getbootstrap.com/" target="_blank">Bootstrap</a>.<br>
+                        Data processed with <a href="https://pola.rs/" target="_blank">Polars</a>.
+                        Hosted by <a href="https://www.heroku.com/" target="_blank">Heroku</a>.
+                    </small>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <small>
+                        Original by <a href="https://github.com/mwcraig/" target="_blank">Matthew Craig</a><br>
+                        Maintained by <a href="https://web.mnstate.edu/cabanela/" target="_blank">Juan Cabanela</a>
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="container">
+            <p>&copy; 2025 Minnesota State University Moorhead. All rights reserved.</p>
+        </div>
+    </footer>
     
     <!-- Bootstrap JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>

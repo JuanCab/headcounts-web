@@ -91,7 +91,7 @@ def search():
                 if form.colleges.data:
                     filters['college'] = form.colleges.data
                 if form.subjects.data:
-                    filters['department'] = form.subjects.data
+                    filters['subject'] = form.subjects.data
                 if form.class_code.data:
                     filters['course_number'] = form.class_code.data
                 if form.lasc_number.data:

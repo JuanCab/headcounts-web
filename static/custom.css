@@ -1,13 +1,22 @@
+@font-face {
+    font-family: 'ScalaSansWeb';
+    src: url('/static/fonts/ScalaSansWeb-Regular.woff2') format('woff2'),
+         url('/static/fonts/ScalaSansWeb-Regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
 :root {
     --msu-red: #D10000;
-    --msu-dark-red: #B80000;
+    --msu-dark-red: rgb(200, 16, 46);
     --msu-black: #1a1a1a;
     --msu-gray: #333333;
     --msu-light-gray: #a2aeba;
     --msu-gold: #FFD700;
+    --msum-light-background: rgba(0,0,0,0.5);
     --gradient-primary: linear-gradient(135deg, #c8102e 0%, #c8102e 100%);
     --gradient-secondary: linear-gradient(135deg, #1a1a1a 0%, #333333 100%);
-    --gradient-background: linear-gradient(135deg, #828488 0%, #810a1e 100%);
+    --gradient-background: linear-gradient(135deg, #ffffff 0%, #000000 100%);
 }
 
 * {
@@ -17,7 +26,7 @@
 }
 
 body {
-    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'ScalaSansWeb', Arial, sans-serif;
     background: var(--gradient-background);
     min-height: 100vh;
     color: var(--msu-black);
@@ -26,7 +35,7 @@ body {
 
 /* Header Styles */
 .header-section {
-    background: var(--gradient-primary);
+    background: var(--msum-light-background);
     color: white;
     padding: 1.5rem 0;
     box-shadow: 0 4px 20px rgba(0,0,0,0.1);
@@ -37,15 +46,18 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-direction: column;
     text-align: center;
 }
 
-.header-content h1 {
-    font-size: 2rem;
-    font-weight: 700;
+.header-content h1, .header-content .logo {
+    font-size: 2.25rem;
+    font-weight: 475;
     margin-bottom: 0.5rem;
     text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.header-content img {
+    margin-right: 2rem;
 }
 
 .header-content p {
@@ -67,18 +79,36 @@ body {
 }
 
 /* Footer */
-.footer-section {
-    background: var(--gradient-secondary);
-    color: white;
-    padding: 1.5rem 0;
-    text-align: center;
-    margin-top: auto;
+.site-footer {
+    background: #f8f9fa;
+    color: #6c757d;
+    font-size: 0.97rem;
+    border-top: 1px solid #e5e5e5;
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
 }
 
-.footer-section p {
-    margin: 0;
-    opacity: 0.8;
-    font-size: 0.9rem;
+.site-footer a {
+    color: #a6192e;
+    text-decoration: underline;
+    transition: color 0.2s;
+}
+
+.site-footer a:hover {
+    color: #7d1322;
+    text-decoration: none;
+}
+
+.site-footer small {
+    font-size: 0.97rem;
+}
+
+.site-footer p {
+    margin: 0.5rem 0 0 0;
+    font-size: 0.95rem;
+    color: #888;
+    text-align: center;
 }
 
 /* Search Card */
@@ -209,22 +239,25 @@ body {
 
 /* Buttons */
 .btn-search {
-    background: var(--gradient-primary);
-    color: white;
+    background: rgb(255, 255, 255);
+    color: var(--msu-dark-red);
     border: none;
     padding: 1rem 2.5rem;
     font-size: 1.1rem;
     font-weight: 600;
-    border-radius: 40px;
-    transition: all 0.3s ease;
-    box-shadow: 0 6px 20px rgba(209, 0, 0, 0.3);
+    border-radius: 0.125em;
+    transition: all 0.4s ease;
+    box-shadow: 3px 4px 5px rgba(209, 0, 0, 0.3);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     min-width: 180px;
+    cursor: pointer;
 }
 
 .btn-search:hover {
-    transform: translateY(-2px);
+    background: var(--msu-red);
+    color: white;
+    transform: translateY(-1px);
     box-shadow: 0 8px 25px rgba(209, 0, 0, 0.4);
 }
 
@@ -235,13 +268,14 @@ body {
     padding: 0.8rem 1.5rem;
     font-size: 1rem;
     font-weight: 500;
-    border-radius: 40px;
+    border-radius: 0.125em;
     transition: all 0.3s ease;
     margin-left: 1rem;
 }
 
 .btn-reset:hover {
-    background: var(--msu-gray);
+    background: var(--msu-red);
+    color: white;
     transform: translateY(-1px);
 }
 
@@ -271,13 +305,12 @@ body {
 .special-filters h4 {
     color: white;
     margin-bottom: 1rem;
-    font-weight: 600;
 }
 
 .special-filters .form-check {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 8px;
-    padding: 0.75rem 1rem;
+    padding: 0.75rem 2rem;
     margin-bottom: 0.5rem;
     transition: all 0.3s ease;
 }
@@ -288,7 +321,7 @@ body {
 
 .special-filters .form-check-label {
     color: white;
-    font-weight: 500;
+    font-weight: 400;
 }
 
 .special-filters .form-check-input:checked {

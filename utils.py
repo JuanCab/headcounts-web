@@ -421,7 +421,7 @@ def process_data_request(render_me, path, subj_text):
         subj_text = f"{subj_text} Data for {terms[0]} through {terms[-1]}"
     else:
         # If there is only one term, just show that term
-        subj_text = f"{subj_text} Data for {terms[0]}"
+        subj_text = f"{subj_text} \n Data for {terms[0]}"
 
     # Get most recent and oldest timestamps from the DataFrame
     # to display in the rendered template.
@@ -536,7 +536,7 @@ def filter_data_advanced(tbl, **filters):
     **filters : dict
         Filter parameters that can include:
         - college: str (college code like 'CBAC', 'COAH', etc.)
-        - department: str (department/subject like 'CSCI', 'MATH', etc.)
+        - subject: str (subject like 'CSCI', 'MATH', etc.)
         - course_number: str (course number like '241', '101', etc.)
         - term: str (year/term code like '20231', '20235', etc.)
         - lasc_area: str (LASC area like '1A', '2B', etc.)
@@ -567,12 +567,12 @@ def filter_data_advanced(tbl, **filters):
             filtered_table = filtered_table.filter(pl.col('College') == college)
             filter_descriptions.append(f"College: {college}")
         
-        # Apply department filter
-        if filters.get('department'):
-            department = filters['department'].upper()
-            filtered_table = filtered_table.filter(pl.col('Subj') == department)
-            filter_descriptions.append(f"Department: {department}")
-        
+        # Apply subject filter
+        if filters.get('subject'):
+            subject = filters['subject'].upper()
+            filtered_table = filtered_table.filter(pl.col('Subj') == subject)
+            filter_descriptions.append(f"Subject: {subject}")
+
         # Apply course number filter
         if filters.get('course_number'):
             course_num = filters['course_number']
@@ -583,7 +583,7 @@ def filter_data_advanced(tbl, **filters):
         if filters.get('term'):
             term = int(filters['term'])
             filtered_table = filtered_table.filter(pl.col('Fiscal yrtr') == term)
-            filter_descriptions.append(f"Term: {term}")
+            # filter_descriptions.append(f"Term: {term}")
         
         # Apply LASC area filter
         if filters.get('lasc_area'):

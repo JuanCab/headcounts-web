@@ -121,8 +121,8 @@ class SearchForm(FlaskForm):
     )
     
     lasc_number = SelectField(
-        'LASC Number',
-        choices=[('', 'Select LASC Number')] + [(str(i), str(i)) for i in range(1, 11)],
+        'LASC Area',
+        choices=[('', 'Select LASC Area')] + [(str(i), str(i)) for i in range(1, 11)],
         validators=[Optional()],
         default=''
     )

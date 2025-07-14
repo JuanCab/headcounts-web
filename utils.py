@@ -146,12 +146,12 @@ def filter_data(tbl, subject, spec1=None, spec2=None):
                     filtered_table = filtered_table.filter(
                         pl.col('#').str.starts_with(numcode.upper())
                     )
-                    subj_text = f"{subj_text} {numcode} (Any variant)"
+                    subj_text = f"{subj_text} {numcode.upper()} (Any variant)"
                 else: # Exact match of course number/letter
                     filtered_table = filtered_table.filter(
                         pl.col('#') == spec.upper()
                     )
-                    subj_text = f"{subj_text} {spec}"
+                    subj_text = f"{subj_text} {spec.upper()}"
 
 
     # Always sort the output by Fiscal yrtr, Subj, #, and section

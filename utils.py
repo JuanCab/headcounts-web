@@ -146,7 +146,7 @@ def filter_data(tbl, subject, spec1=None, spec2=None):
                     filtered_table = filtered_table.filter(
                         pl.col('#').str.starts_with(numcode.upper())
                     )
-                    subj_text = f"{subj_text} {numcode.upper()} (Any variant)"
+                    subj_text = f"{subj_text} {numcode.upper()} (Any Variant)"
                 else: # Exact match of course number/letter
                     filtered_table = filtered_table.filter(
                         pl.col('#') == spec.upper()

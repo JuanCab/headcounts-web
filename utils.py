@@ -122,7 +122,7 @@ def filter_data(tbl, subject, spec1=None, spec2=None):
                 filtered_table = filtered_table.filter(
                     pl.col('Fiscal yrtr') == int(spec)
                     )
-            # 2) Handle Course Rubric specifiers
+            # 2) Handle Course Prefix specifiers
             elif (re.match('[a-z]{2,4}', spec) and spec not in ['lasc', 'wi']):
                 filtered_table = filtered_table.filter(
                     pl.col('Subj') == spec.upper()
@@ -140,7 +140,7 @@ def filter_data(tbl, subject, spec1=None, spec2=None):
                 else:
                     # Otherwise, filter by course number
                     filtered_table = filtered_table.filter(
-                        pl.col('#') == spec
+                        pl.col('#') == spec.upper()
                     )
                     subj_text = f"{subj_text} {spec}"
 

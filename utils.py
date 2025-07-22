@@ -122,27 +122,36 @@ def filter_data(tbl, subject, spec1=None, spec2=None):
                 filtered_table = filtered_table.filter(
                     pl.col('Fiscal yrtr') == int(spec)
                     )
-            # 2) Handle Course Rubric specifiers
+            # 2) Handle Course Prefix specifiers
             elif (re.match('[a-z]{2,4}', spec) and spec not in ['lasc', 'wi']):
                 filtered_table = filtered_table.filter(
                     pl.col('Subj') == spec.upper()
                 )
                 subj_text = f"{subj_text} {spec}"
-            else:
-                # Specifier either a course number or LASC area
-                if subject == 'lasc':
+            elif subject == 'lasc':
                     # If the subject is 'lasc', filter by LASC/WI value
                     # which is expected to be uppercase (eg. 1A)
                     filtered_table = filtered_table.filter(
                         pl.col('LASC/WI').str.contains(spec.upper())
                     )
                     subj_text = f"{subj_text} {spec.upper()}"
-                else:
-                    # Otherwise, filter by course number
+            else:
+                # Otherwise, filter by course number
+
+                # If the last character is an underscore, treat it
+                # as a wildcard and match any course number that
+                # starts with the given numerical code.
+                if spec[-1] == '_':
+                    numcode = spec[:-1]
                     filtered_table = filtered_table.filter(
-                        pl.col('#') == spec
+                        pl.col('#').str.starts_with(numcode.upper())
                     )
-                    subj_text = f"{subj_text} {spec}"
+                    subj_text = f"{subj_text} {numcode.upper()} (Any Variant)"
+                else: # Exact match of course number/letter
+                    filtered_table = filtered_table.filter(
+                        pl.col('#') == spec.upper()
+                    )
+                    subj_text = f"{subj_text} {spec.upper()}"
 
 
     # Always sort the output by Fiscal yrtr, Subj, #, and section

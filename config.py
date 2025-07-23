@@ -23,7 +23,7 @@ CSV_DATA = 'all_enrollments.csv'
 
 # Define the directory where setup files are stored defining colleges at 
 # MSUM
-SETUP_DIR = 'msum_setup/'
+SETUP_DIR = 'static/'
 
 # Define the directory where backup files are stored
 BACKUP_DIR = 'backups/'

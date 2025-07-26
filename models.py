@@ -153,7 +153,7 @@ class SearchForm(FlaskForm):
     
     year = SelectField(
         'Year',
-        choices=get_year_choices(),
+        choices=YEAR_CHOICES,
         validators=[Optional()],
         default=''
     )

@@ -144,12 +144,6 @@ body {
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-.card-header-custom p {
-    font-size: 1rem;
-    opacity: 0.9;
-    margin: 0;
-}
-
 /* FROM */
 .form-container {
     padding: 2rem;
@@ -208,34 +202,6 @@ body {
     border-color: var(--msu-red);
 }
 
-/* Checkboxes */
-.form-check {
-    margin-bottom: 1rem;
-}
-
-.form-check-input {
-    width: 1.25rem;
-    height: 1.25rem;
-    margin-top: 0.2rem;
-    margin-right: 10px;
-    border: 2px solid #dee2e6;
-    border-radius: 4px;
-}
-
-.form-check-label {
-    font-size: 0.95rem;
-    font-weight: 500;
-    color: var(--msu-gray);
-    margin-left: 0.5rem;
-    margin-bottom: -20px; 
-    transition: all 0.3s ease;
-}
-
-.form-check-label:hover {
-    border-color: var(--msu-red);
-    box-shadow: 0 0 0 0.2rem rgba(209, 0, 0, 0.15);
-}
-
 /* Validation */
 .is-invalid {
     border-color: #dc3545 !important;
@@ -250,13 +216,34 @@ body {
     font-weight: 500;
 }
 
-/* Disabled States */
-.disabled-section,
-.form-section.disabled {
-    opacity: 0.6;
-    pointer-events: none;
-    transition: all 0.3s ease;
+/* Class Code Visibility Logic */
+#classCodeContainer {
+    opacity: 0;
+    max-width: 0;
+    overflow: hidden;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    transition: all 0.4s ease;
 }
+
+#classCodeContainer.show {
+    opacity: 1;
+    max-width: 100%;
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+}
+
+/* Adjust container widths when class code is visible */
+.row.has-class-code #subjectContainer {
+    flex: 0 0 auto;
+    width: 33.333333%;
+}
+
+.row.has-class-code #courseTypeContainer {
+    flex: 0 0 auto;
+    width: 41.666667%;
+}
+
 
 /* Button Styles */
 .btn-search,
@@ -294,41 +281,6 @@ body {
     margin-left: 1.5rem;
 }
 
-/* Special Filters */
-.special-filters {
-    background: var(--msu-red);
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 4px 15px rgba(139, 0, 0, 0.2);
-}
-
-.special-filters h4 {
-    color: white;
-    margin-bottom: 1rem;
-}
-
-.special-filters .form-check {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 0.75rem 2rem;
-    margin-bottom: 0.5rem;
-    transition: all 0.3s ease;
-}
-
-.special-filters .form-check:hover {
-    background: rgba(255, 255, 255, 0.2);
-}
-
-.special-filters .form-check-label {
-    color: white;
-    font-weight: 400;
-}
-
-.special-filters .form-check-input:checked {
-    background-color: var(--msu-gold);
-    border-color: var(--msu-gold);
-}
 
 .filter-info {
     background: #e8f4f8;

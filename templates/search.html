@@ -4,165 +4,123 @@
 
 {% block head %}
 {{ super() }}
-
 {% endblock %}
 
 {% block content %}
-
-<!-- Main Content -->
-    <div class="content-wrapper">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="row justify-content-center mb-4">
-                    <div class="col-lg-8">
-                        {% for category, message in messages %}
-                            <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show animate-fade-in" role="alert">
-                                <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'error' %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        {% endfor %}
-                    </div>
+<div class="content-wrapper">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="row justify-content-center mb-4">
+                <div class="col-lg-8">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show animate-fade-in" role="alert">
+                            <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'error' %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
                 </div>
-            {% endif %}
-        {% endwith %}
+            </div>
+        {% endif %}
+    {% endwith %}
 
-        <div class="row justify-content-center">
-            <div class="col-12 col-xl-10">
-                <div class="search-card animate-fade-in">
-                    <div class="card-header-custom">
-                        <h2><i class="fas fa-search me-3"></i>Course Search</h2>
-                    </div>
-                    
-                    <div class="form-container">
-                        <form method="POST" id="courseSearchForm">
-                            {{ form.hidden_tag() }}
-                            
-                            <!-- Special Filters Section -->
-                            <div class="special-filters">
-                                <h4><i class="fas fa-star"></i> Special Filters</h4>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-check">
-                                            <label class="form-check-label w-100" style="cursor:pointer;">
-                                                {{ form.writing_intensive(class="form-check-input", id="writingIntensive") }}
-                                                {{ form.writing_intensive.label.text }}
-                                            </label>
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-10">
+            <div class="search-card animate-fade-in">
+                <div class="card-header-custom">
+                    <h2><i class="fas fa-search me-3"></i>Course Search</h2>
+                </div>
+                <div class="form-container">
+                    <form method="POST" id="courseSearchForm">
+                        {{ form.hidden_tag() }}
+
+                        <!-- Primary Search Criteria -->
+                        <div class="form-section">
+                            <h4><i class="fas fa-university"></i>Primary Search Criteria</h4>
+                            <div class="row g-4">
+                                <div class="col-md-4" id="subjectContainer">
+                                    {{ form.subject_or_college.label(class="form-label") }}
+                                    {{ form.subject_or_college(class="form-select" + (" is-invalid" if form.subject_or_college.errors else "")) }}
+                                    {% if form.subject_or_college.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.subject_or_college.errors %}
+                                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                            {% endfor %}
                                         </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-check">
-                                            <label class="form-check-label w-100" style="cursor:pointer;">
-                                                {{ form.online_18(class="form-check-input", id="online18") }}
-                                                {{ form.online_18.label.text }}
-                                            </label>
-                                        </div>
-                                    </div>
+                                    {% endif %}
                                 </div>
-                                <div class="filter-info mt-3" id="specialModeInfo" style="display: none;">
-                                    <i class="fas fa-info-circle me-2"></i>
-                                    <span id="specialModeText">Special mode active - some filters have been disabled.</span>
+                                <div class="col-md-3" id="classCodeContainer">
+                                    {{ form.class_code.label(class="form-label") }}
+                                    {{ form.class_code(class="form-control" + (" is-invalid" if form.class_code.errors else "")) }}
+                                    {% if form.class_code.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.class_code.errors %}
+                                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
                                 </div>
-                            </div>
-                            
-                            <!-- Main Fields Container -->
-                            <div id="mainFields">
-                                <!-- Primary Search Criteria -->
-                                <div class="form-section">
-                                    <h4><i class="fas fa-university"></i>Primary Search Criteria</h4>
-                                    <div class="row g-4">
-                                        <div class="col-md-6">
-                                            {{ form.colleges.label(class="form-label") }}
-                                            {{ form.colleges(class="form-select" + (" is-invalid" if form.colleges.errors else "")) }}
-                                            {% if form.colleges.errors %}
-                                                <div class="invalid-feedback">
-                                                    {% for error in form.colleges.errors %}
-                                                        <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
-                                                    {% endfor %}
-                                                </div>
-                                            {% endif %}
+                                <div class="col-md-5" id="courseTypeContainer">
+                                    {{ form.course_type.label(class="form-label") }}
+                                    {{ form.course_type(class="form-select" + (" is-invalid" if form.course_type.errors else "")) }}
+                                    {% if form.course_type.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.course_type.errors %}
+                                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                            {% endfor %}
                                         </div>
-                                        
-                                        <div class="col-md-6">
-                                            {{ form.subjects.label(class="form-label") }}
-                                            {{ form.subjects(class="form-select" + (" is-invalid" if form.subjects.errors else "")) }}
-                                            {% if form.subjects.errors %}
-                                                <div class="invalid-feedback">
-                                                    {% for error in form.subjects.errors %}
-                                                        <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
-                                                    {% endfor %}
-                                                </div>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Additional Filters -->
-                                <div class="form-section" id="additionalFilters">
-                                    <h4><i class="fas fa-filter"></i>Additional Filters</h4>
-                                    <div class="row g-4">
-                                        <div class="col-md-6">
-                                            {{ form.class_code.label(class="form-label") }}
-                                            {{ form.class_code(class="form-control" + (" is-invalid" if form.class_code.errors else "")) }}
-                                            {% if form.class_code.errors %}
-                                                <div class="invalid-feedback">
-                                                    {% for error in form.class_code.errors %}
-                                                        <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
-                                                    {% endfor %}
-                                                </div>
-                                            {% endif %}
-                                            <small class="text-muted">Requires subject selection</small>
-                                        </div>
-                                        
-                                        <div class="col-md-6">
-                                            {{ form.lasc_number.label(class="form-label") }}
-                                            {{ form.lasc_number(class="form-select") }}
-                                        </div>
-                                    </div>
+                                    {% endif %}
                                 </div>
                             </div>
-                            
-                            <!-- Time Period Section (Always Active) -->
-                            <div class="form-section" id="timePeriod">
-                                <h4><i class="fas fa-calendar-alt"></i>Time Period</h4>
-                                <div class="row g-4">
-                                    <div class="col-md-6">
-                                        {{ form.semester.label(class="form-label") }}
-                                        {{ form.semester(class="form-select") }}
-                                        {% if form.semester.errors %}
-                                            <div class="invalid-feedback">
-                                                {% for error in form.semester.errors %}
-                                                    <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
-                                                {% endfor %}
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                    
-                                    <div class="col-md-6">
-                                        {{ form.year.label(class="form-label") }}
-                                        {{ form.year(class="form-select") }}
-                                    </div>
+                        </div>
+
+                        <!-- Time Period Section -->
+                        <div class="form-section">
+                            <h4><i class="fas fa-calendar-alt"></i>Time Period</h4>
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    {{ form.semester.label(class="form-label") }}
+                                    {{ form.semester(class="form-select" + (" is-invalid" if form.semester.errors else "")) }}
+                                    {% if form.semester.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.semester.errors %}
+                                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.year.label(class="form-label") }}
+                                    {{ form.year(class="form-select" + (" is-invalid" if form.year.errors else "")) }}
+                                    {% if form.year.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.year.errors %}
+                                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
                                 </div>
                             </div>
-                            
-                            <!-- Submit Buttons -->
-                            <div class="text-center mt-4">
-                                <button type="submit" class="btn btn-search">
-                                    <i class="fas fa-search me-2"></i>Search Courses
-                                </button>
-                                <button type="button" class="btn btn-reset" id="resetBtn">
-                                    <i class="fas fa-undo me-2"></i>Reset
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-search">
+                                <i class="fas fa-search me-2"></i>Search Courses
+                            </button>
+                            <button type="button" class="btn btn-reset" id="resetBtn">
+                                <i class="fas fa-undo me-2"></i>Reset
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
 {% endblock %}
 
 {% block scripts %}
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+<script src="{{ url_for('static', filename='script.js') }}"></script>
 {% endblock %}

@@ -6,7 +6,7 @@ from datetime import datetime
 # College and subject choices for form dropdowns
 COLLEGES = [
     ('', 'Select College or Subject'),
-    ('', '── COLLEGES ──'),
+    ('_', '── COLLEGES ──'),
     ('CBAC', 'College of Business, Analytics, & Communication'),
     ('COAH', 'College of Arts and Humanities'),
     ('CSHE', 'College of Science, Health, & the Environment'),
@@ -14,7 +14,7 @@ COLLEGES = [
 ]
 
 SUBJECTS = [
-    ('', '── SUBJECTS ──'),
+    ('_', '── SUBJECTS ──'),
     ('ACCT', 'Accounting'),
     ('AEM', 'Audio Production & Entertainment Management'),
     ('AMCS', 'American Multicultural Studies'),
@@ -123,12 +123,12 @@ class SearchForm(FlaskForm):
         'Subject or College',
         choices=COLLEGES + SUBJECTS,
         validators=[Optional()],
-        default=COLLEGES[0][0] 
+        default=COLLEGES[0]
     )
     
     # Combined Course Type dropdown (LASC, WI, 18-Online)
     course_type = SelectField(
-        'Course Type',
+        'Course Type (LASC/WI/18-Online)',
         choices=COURSE_TYPES,
         validators=[Optional()],
         default=''
@@ -151,14 +151,14 @@ class SearchForm(FlaskForm):
             ('Spring', 'Spring')
         ],
         validators=[Optional()],
-        default=''
+        default= 'Fall'
     )
     
     year = SelectField(
         'Year',
         choices=YEAR_CHOICES,
         validators=[Optional()],
-        default=''
+        default='2026'
     )
 
     def validate(self, extra_validators=None):

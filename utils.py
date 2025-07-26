@@ -533,6 +533,8 @@ def process_data_request(render_me, path, subj_text):
                            revenue=calulcated_tuition,
                            base_detail_url=COURSE_DETAIL_URL)
 
+
+
 def filter_data_advanced(tbl, **filters):
     """
     Advanced filtering function that accepts multiple filter parameters for form-based filtering.
@@ -607,6 +609,7 @@ def filter_data_advanced(tbl, **filters):
         descending=[False, False, False, False]
     )
     return filtered_table, subj_text
+
 
 def sanitize_excel_sheetname(name):
     """

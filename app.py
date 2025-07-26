@@ -139,25 +139,28 @@ def build_url(form):
     return "/" + "/".join(parts) if parts else "/"
 
 
-@app.route('/search', methods=['GET'])
+@app.route('/search', methods=['GET', 'POST'])
 def search():
     """
-    Display the search form or process the query (GET-only).
-    Always redirect to the bookmarkable /<subject>/<spec1>/<spec2> URL.
+    Show the form (GET) or accept submission (POST) and redirect
+    to the canonical /<subject>/<spec1>/<spec2> URL handled by filtered_view.
     """
-    form = SearchForm(request.args)
+    form = SearchForm()
 
-    # If there are query parameters (form submitted)
-    if request.args:
-        if form.validate():
-            # Build URL and redirect to filtered_view
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            # Build URL and redirect to filtered_view (bookmarkable)
             dest = build_url(form)
             return redirect(dest)
         else:
             flash("Please correct the errors below", "error")
+            return render_template('search.html', form=form)
 
-    # Initial load (no query parameters) or invalid form -> show form
+    # GET (initial page or redirected after POST)
     return render_template('search.html', form=form)
+
+
+
 
 
 

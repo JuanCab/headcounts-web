@@ -6,7 +6,7 @@ from datetime import datetime
 # College and subject choices for form dropdowns
 COLLEGES = [
     ('', 'Select College or Subject'),
-    ('_', '── COLLEGES ──'),
+    ('_', '── COLLEGES ──', {'disabled': True}),
     ('CBAC', 'College of Business, Analytics, & Communication'),
     ('COAH', 'College of Arts and Humanities'),
     ('CSHE', 'College of Science, Health, & the Environment'),
@@ -14,7 +14,7 @@ COLLEGES = [
 ]
 
 SUBJECTS = [
-    ('_', '── SUBJECTS ──'),
+    ('_', '── SUBJECTS ──', {'disabled': True}),
     ('ACCT', 'Accounting'),
     ('AEM', 'Audio Production & Entertainment Management'),
     ('AMCS', 'American Multicultural Studies'),
@@ -170,6 +170,11 @@ class SearchForm(FlaskForm):
         if self.semester.data == '' or self.year.data == '':
             self.semester.data = ''
             self.year.data = ''
+
+        # If selected subject_or_college is a divider (shouldn't happen with disabled options, but good to check)
+        if self.subject_or_college.data == '_':
+            self.subject_or_college.errors.append("Please select a valid subject or college, not a divider.")
+            return False
         
         # Check for Spring 2014 - we don't have data for this
         if self.semester.data == 'Spring' and self.year.data == '2015':
@@ -177,10 +182,11 @@ class SearchForm(FlaskForm):
             return False
         
         # Mutual exclusion rule: cannot select both subject_or_college and course_type
+        # (This should be handled by frontend auto-reset, but keep as fallback)
         if self.subject_or_college.data and self.course_type.data:
-            self.subject_or_college.errors.append('Cannot select both Subject/College and Course Type. Please choose one or the other.')
-            self.course_type.errors.append('Cannot select both Subject/College and Course Type. Please choose one or the other.')
-            return False
+            # Auto-reset course_type to favor subject/college selection
+            self.course_type.data = ''
+
         
         # Class code validation: requires subject selection (not college)
         if self.class_code.data:
@@ -188,9 +194,9 @@ class SearchForm(FlaskForm):
                 self.subject_or_college.errors.append('Select a subject when using class codes')
                 return False
             
-            # Check if selection is from subjects section (not colleges or headers)
-            if self.subject_or_college.data in ['__COLLEGES__', '__SUBJECTS__']:
-                self.subject_or_college.errors.append('Invalid selection. Please select a specific subject or college.')
+            # Check if selection is a divider (shouldn't happen with disabled options, but good to check)
+            if self.subject_or_college.data == '_':
+                self.subject_or_college.errors.append('Invalid selection. Please select a specific subject or college, not a divider.')
                 return False
             
             # Check if it's a college (not allowed with class codes)

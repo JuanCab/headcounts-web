@@ -216,6 +216,17 @@ body {
     font-weight: 500;
 }
 
+/* Style disabled options in select dropdowns */
+.form-select option:disabled {
+    color: #6c757d;
+    font-style: italic;
+    background-color: #f8f9fa;
+}
+
+.form-select option:disabled:hover {
+    background-color: #f8f9fa;
+}
+
 /* Class Code Visibility Logic */
 #classCodeContainer {
     display: none;

@@ -218,19 +218,15 @@ body {
 
 /* Class Code Visibility Logic */
 #classCodeContainer {
+    display: none;
     opacity: 0;
-    max-width: 0;
-    overflow: hidden;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    transition: all 0.4s ease;
+    transition: opacity 0.3s;
 }
 
 #classCodeContainer.show {
+    display: block;
     opacity: 1;
-    max-width: 100%;
-    padding-left: 0.75rem !important;
-    padding-right: 0.75rem !important;
+    transition: opacity 0.3s;
 }
 
 /* Adjust container widths when class code is visible */
@@ -242,6 +238,26 @@ body {
 .row.has-class-code #courseTypeContainer {
     flex: 0 0 auto;
     width: 41.666667%;
+}
+
+.wildcard-note {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+    display: block;
+    line-height: 1.3;
+    opacity: 0;
+    transform: translateY(-5px);
+    transition: all 0.3s ease;
+}
+
+#classCodeContainer.show .wildcard-note {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+#classCodeContainer.show .form-control {
+    margin-bottom: 0.25rem;
 }
 
 

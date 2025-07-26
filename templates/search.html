@@ -52,6 +52,9 @@
                                 <div class="col-md-3" id="classCodeContainer">
                                     {{ form.class_code.label(class="form-label") }}
                                     {{ form.class_code(class="form-control" + (" is-invalid" if form.class_code.errors else "")) }}
+                                    <small class="text-muted wildcard-note">
+                                        <i class="fas fa-info-circle me-1"></i>Use _ as wildcard (e.g., 241_ for all courses starting with 241)
+                                    </small>
                                     {% if form.class_code.errors %}
                                         <div class="invalid-feedback">
                                             {% for error in form.class_code.errors %}

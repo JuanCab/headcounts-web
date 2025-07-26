@@ -116,13 +116,10 @@ def build_url(form):
     else:
         ctype = (form.course_type.data or "").strip()
         if ctype:
-            if ctype == "wi":
-                parts.append("WI")
-            elif ctype == "18":
+            if ctype == "18":
                 parts.append("18online")
-            elif ctype.startswith("lasc/"):
-                area = ctype.split("/", 1)[1]
-                parts.extend(["LASC", area])
+            else:
+                 parts.append(ctype)
 
     # 3) Term (semester + year combined)
     term = None

@@ -151,7 +151,7 @@ class SearchForm(FlaskForm):
             ('Spring', 'Spring')
         ],
         validators=[Optional()],
-        default= 'Fall'
+        default='Fall'
     )
     
     year = SelectField(
@@ -165,6 +165,11 @@ class SearchForm(FlaskForm):
         """Custom validation for form fields."""
         if not super().validate(extra_validators):
             return False
+        
+        # If semester == 'All' or year == 'All', set both to 'All'
+        if self.semester.data == '' or self.year.data == '':
+            self.semester.data = ''
+            self.year.data = ''
         
         # Check for Spring 2014 - we don't have data for this
         if self.semester.data == 'Spring' and self.year.data == '2015':
@@ -198,10 +203,12 @@ class SearchForm(FlaskForm):
 
     def has_filters(self):
         """Check if any meaningful filters are applied."""
+        # Check if time period is meaningful (not both 'All')
+        time_period_filtered = not (self.semester.data == '' and self.year.data == '')
+        
         return any([
             self.subject_or_college.data,
             self.course_type.data,
             self.class_code.data,
-            self.semester.data,
-            self.year.data
+            time_period_filtered
         ])

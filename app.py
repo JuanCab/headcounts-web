@@ -107,14 +107,29 @@ def search():
             if not form.has_filters():
                 filters['all_courses'] = True
             else:
-                if form.colleges.data:
-                    filters['college'] = form.colleges.data
-                if form.subjects.data:
-                    filters['subject'] = form.subjects.data
+                # Handle subject or college selection
+                if form.subject_or_college.data:
+                    # Check if it's a college or subject
+                    college_codes = ['CBAC', 'COAH', 'CSHE', 'CEHS']
+                    if form.subject_or_college.data in college_codes:
+                        filters['college'] = form.subject_or_college.data
+                    else:
+                        filters['subject'] = form.subject_or_college.data
+                
+                # Handle course type (LASC, WI, 18-Online)
+                if form.course_type.data:
+                    if form.course_type.data == 'wi':
+                        filters['wi_only'] = True
+                    elif form.course_type.data == '18':
+                        filters['online_only'] = True
+                    elif form.course_type.data.startswith('lasc/'):
+                        filters['lasc_area'] = form.course_type.data.split('/')[1]
+                
+                # Handle class code
                 if form.class_code.data:
                     filters['course_number'] = form.class_code.data
-                if form.lasc_number.data:
-                    filters['lasc_area'] = form.lasc_number.data
+                
+                # Handle time period - only process if both are not 'All'
                 if form.semester.data and form.year.data:
                     term_map = {'Spring': '5', 'Summer': '1', 'Fall': '3'}
                     if form.semester.data in term_map and form.year.data:
@@ -124,12 +139,6 @@ def search():
                         if form.semester.data == 'Spring':
                             year -= 1
                         filters['term'] = int(str(year) + term_digit)
-                if form.writing_intensive.data:
-                    filters['wi_only'] = True
-                if form.online_18.data:
-                    filters['online_only'] = True
-                
-                
 
             # Read the Parquet file containing course enrollment data as a lazy
             # Polars DataFrame.

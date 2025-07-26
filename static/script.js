@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const subjectOrCollege = document.getElementById('subject_or_college');
     const classCodeContainer = document.getElementById('classCodeContainer');
     const primaryRow = document.querySelector('.form-section .row');
+    const semesterField = document.getElementById('semester');
+    const yearField = document.getElementById('year');
 
     // Invalid values that should not show class code field
     const invalidValues = [
@@ -62,6 +64,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Form submission validation
     form.addEventListener('submit', function(e) {
+        // Apply time period rule only on form submission
+        if (semesterField && yearField) {
+            if (semesterField.value === '' || yearField.value === '') {
+                semesterField.value = '';
+                yearField.value = '';
+            }
+        }
+
         const hasAnyFilter = Array.from(form.elements).some(element => {
             if (element.type === 'checkbox') return element.checked;
             if (element.type === 'select-one' || element.type === 'text') return element.value.trim();

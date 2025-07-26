@@ -19,8 +19,9 @@ import requests
 from bs4 import BeautifulSoup
 import lxml.html
 import numpy as np
-
 import polars as pl
+
+from config import SCRAPE_DIR
 
 # The URLs below have a few parameters that need to be substituted to
 # make them useful. Those parameters are:
@@ -44,14 +45,13 @@ COURSE_DETAIL_URL = URL_COMMON_ROOT + 'detail.html?campusid={campus_id:03}&cours
 # text in one course that contained the word "Enrolled"
 SIZE_KEYS = ['Enrolled:', 'Size:']
 
-# Define the directory where the data will be stored.
-DATA_DIR = Path('data')
 # Confirm that the data directory exists, and create it if it does not.
-DATA_DIR.mkdir(parents=True, exist_ok=True)
+SCRAPE_DIR = Path(SCRAPE_DIR)
+SCRAPE_DIR.mkdir(parents=True, exist_ok=True)
 
 # Provide stub for the destination directory name within the data directory.
 # This will be filled in with a timestamp later.
-DESTINATION_DIR_BASE = str( DATA_DIR / 'results_v2' )
+DESTINATION_DIR_BASE = str( SCRAPE_DIR / 'results_v2' )
 
 # # Name of symlink to create to most recent scrape
 # LATEST = str( DATA_DIR / 'latest' )

@@ -21,9 +21,12 @@ PARQUET_DATA = 'all_enrollments.parquet'
 # .csv extension)
 CSV_DATA = 'all_enrollments.csv'
 
+# Define the directory where the scraped data will be stored.
+SCRAPE_DIR = 'data/'
+
 # Define the directory where setup files are stored defining colleges at 
 # MSUM
-SETUP_DIR = 'msum_setup/'
+SETUP_DIR = 'assets/'
 
 # Define the directory where backup files are stored
 BACKUP_DIR = 'backups/'

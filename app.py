@@ -8,7 +8,7 @@ from flask import Flask, flash, redirect, render_template, request, send_from_di
 from flask_wtf import CSRFProtect
 import polars as pl
 from models import SearchForm
-from utils import filter_data, filter_data_advanced, process_data_request
+from utils import filter_data, process_data_request
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 

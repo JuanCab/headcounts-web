@@ -535,6 +535,7 @@ def process_data_request(render_me, path, subj_text):
 
 
 
+# Kept for future enhancements
 def filter_data_advanced(tbl, **filters):
     """
     Advanced filtering function that accepts multiple filter parameters for form-based filtering.

@@ -3,14 +3,27 @@ import os
 import sys
 from pathlib import Path
 
-from config import CACHE_DIR, COURSE_DATA_SOURCE_URL, PARQUET_DATA
-from flask import Flask, flash, redirect, render_template, request, send_from_directory, url_for
+from config import (
+    CACHE_DIR,
+    COURSE_DATA_SOURCE_URL,
+    PARQUET_DATA,
+)
+from flask import (
+    Flask,
+    flash,
+    redirect,
+    render_template,
+    request,
+    send_from_directory,
+    url_for,
+)
 from flask_wtf import CSRFProtect
 import polars as pl
 from models import SearchForm
 from utils import filter_data, process_data_request
 
-app = Flask(__name__, static_folder='static', template_folder='templates')
+app = Flask(__name__, static_folder="static", template_folder="templates")
+
 
 def get_secret_key():
     """
@@ -32,23 +45,24 @@ def get_secret_key():
         Always use a strong, random value for production deployments.
     """
     # Try environment variable first
-    key = os.environ.get('SECRET_KEY')
+    key = os.environ.get("SECRET_KEY")
     if key:
         return key
     # Fallback: read from a file (not tracked by git)
     try:
-        with open('.flask_secret_key') as f:
+        with open(".flask_secret_key") as f:
             return f.read().strip()
     except FileNotFoundError:
         raise RuntimeError("SECRET_KEY not set and .flask_secret_key file not found!")
-    
-app.config['SECRET_KEY'] = get_secret_key()
+
+
+app.config["SECRET_KEY"] = get_secret_key()
 csrf = CSRFProtect(app)
 app.url_map.strict_slashes = False
 
 
 # Configure logging to output error messages to the console and set
-# the logging level to ERROR to avoid cluttering the console with 
+# the logging level to ERROR to avoid cluttering the console with
 # non-error messages
 app.logger.addHandler(logging.StreamHandler(sys.stdout))
 app.logger.setLevel(logging.ERROR)
@@ -59,19 +73,21 @@ def inject_source_url():
     """Make COURSE_DATA_SOURCE_URL available in all templates."""
     return dict(source_url=COURSE_DATA_SOURCE_URL)
 
-@app.route('/')
+
+@app.route("/")
 def index():
     """Redirect root URL to the search page."""
-    return redirect(url_for('search'))
+    return redirect(url_for("search"))
 
-@app.route('/<subject>')
-@app.route('/<subject>/<spec1>')
-@app.route('/<subject>/<spec1>/<spec2>')
+
+@app.route("/<subject>")
+@app.route("/<subject>/<spec1>")
+@app.route("/<subject>/<spec1>/<spec2>")
 def filtered_view(subject, spec1=None, spec2=None):
     # Check if the subject is 'favicon.ico' and return an empty string
     # to avoid processing requests for the favicon
-    if subject == 'favicon.ico':
-        return ''
+    if subject == "favicon.ico":
+        return ""
 
     # Read the Parquet file containing course enrollment data as a lazy
     # Polars DataFrame. This allows for efficient querying without loading
@@ -92,9 +108,10 @@ def filtered_view(subject, spec1=None, spec2=None):
     # Call process_data_request to render the filtered data in the render_me
     # DataFrame and return the response. The request path is passed to
     # common_response to ensure the correct URL is used for the download link.
-    # The subj_text is also passed to provide context for the subject 
+    # The subj_text is also passed to provide context for the subject
     # being viewed.
     return process_data_request(render_me, request.path, subj_text)
+
 
 def build_url(form):
     """
@@ -111,11 +128,11 @@ def build_url(form):
     """
     # Check if all fields are empty or default
     if not (
-        (form.subject_or_college.data and form.subject_or_college.data.strip()) or
-        (form.course_type.data and form.course_type.data.strip()) or
-        (form.semester.data and form.semester.data.strip()) or
-        (form.year.data and str(form.year.data).strip()) or
-        (form.class_code.data and form.class_code.data.strip())
+        (form.subject_or_college.data and form.subject_or_college.data.strip())
+        or (form.course_type.data and form.course_type.data.strip())
+        or (form.semester.data and form.semester.data.strip())
+        or (form.year.data and str(form.year.data).strip())
+        or (form.class_code.data and form.class_code.data.strip())
     ):
         return "/all"
 
@@ -138,10 +155,10 @@ def build_url(form):
     # 3) Term (semester + year combined)
     term = None
     if form.semester.data and form.year.data:
-        term_map = {'Spring': '5', 'Summer': '1', 'Fall': '3'}
+        term_map = {"Spring": "5", "Summer": "1", "Fall": "3"}
         sem = form.semester.data
         yr = int(form.year.data)
-        if sem == 'Spring':
+        if sem == "Spring":
             yr -= 1
         term = f"{yr}{term_map.get(sem, '')}"
         parts.append(term)
@@ -152,8 +169,9 @@ def build_url(form):
 
     return "/" + "/".join(parts) if parts else "/"
 
+
 # Suggest changing the route to '/' for conflicts with existing users
-@app.route('/search', methods=['GET', 'POST'])
+@app.route("/search", methods=["GET", "POST"])
 def search():
     """
     Show the form (GET) or accept submission (POST) and redirect
@@ -161,33 +179,29 @@ def search():
     """
     form = SearchForm()
 
-    if request.method == 'POST':
+    if request.method == "POST":
         if form.validate_on_submit():
             # Build URL and redirect to filtered_view (bookmarkable)
             dest = build_url(form)
             return redirect(dest)
         else:
             flash("Please correct the errors below", "error")
-            return render_template('search.html', form=form)
+            return render_template("search.html", form=form)
 
     # GET (initial page or redirected after POST)
-    return render_template('search.html', form=form)
-
-
-
-
-
+    return render_template("search.html", form=form)
 
 
 # Define the route for downloading a cached CSV file
 # This route allows users to download a specific file from the cache
 # The filename is passed as a parameter in the URL
-@app.route('/download/<filename>')
+@app.route("/download/<filename>")
 def download(filename):
     # Thanks to this Stack Overflow answer for the idea of
     # using `send_from_directory` to serve files from a directory:
     # https://stackoverflow.com/questions/34009980/return-a-download-and-rendered-page-in-one-flask-response
     return send_from_directory(CACHE_DIR, filename)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     app.run(debug=True)

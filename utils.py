@@ -534,7 +534,6 @@ def process_data_request(render_me, path, subj_text):
                            base_detail_url=COURSE_DETAIL_URL)
 
 
-
 # Kept for future enhancements
 def filter_data_advanced(tbl, **filters):
     """

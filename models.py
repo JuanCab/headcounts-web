@@ -236,7 +236,7 @@ class SearchForm(FlaskForm):
                 return False
 
             # Check if it's a college (not allowed with class codes)
-            college_codes = [code for code, _ in COLLEGES]
+            college_codes = [c[0] for c in COLLEGES]
             if self.subject_or_college.data in college_codes:
                 self.subject_or_college.errors.append(
                     "Class codes require a subject selection, not a college"

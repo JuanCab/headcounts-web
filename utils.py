@@ -84,7 +84,7 @@ def filter_data(tbl, subject, spec1=None, spec2=None):
     elif subject == 'wi':
         filtered_table = tbl.filter(pl.col("LASC/WI").str.contains("WI"))
     elif subject == '18online':
-        filtered_table = tbl.filter(pl.col('18online') == True)
+        filtered_table = tbl.filter(pl.col('18online'))
     elif subject == 'all':
         # No filtering, just return the original LazyFrame
         filtered_table = tbl
@@ -596,7 +596,7 @@ def filter_data_advanced(tbl, **filters):
             filter_descriptions.append(f"LASC Area: {lasc_area}")
         # Apply online courses filter
         if filters.get('online_only'):
-            filtered_table = filtered_table.filter(pl.col('18online') == True)
+            filtered_table = filtered_table.filter(pl.col('18online'))
             filter_descriptions.append("Online Courses Only")
         # Apply WI courses filter
         if filters.get('wi_only'):

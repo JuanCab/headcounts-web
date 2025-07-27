@@ -117,6 +117,48 @@ COURSE_TYPES = [
 ]
 
 
+def get_term_choices():
+    """Generate term choices from Summer 2014 to Fall 2025, reverse chronological."""
+    terms = []
+    now = datetime.now()
+    # Determine the upcoming semester
+    if now.month >= 8:
+        default_term = (now.year + 1, 3)
+    elif now.month >= 5:
+        default_term = (now.year + 1, 3)
+    elif now.month >= 1:
+        default_term = (now.year + 1, 1)
+    else:
+        default_term = (now.year, 5)
+
+    for year in range(2025, 2013, -1):
+        # Fall
+        term_code = f"{year+1}3"
+        label = f"Fall {year}"
+        if int(term_code) <= 20263:
+            terms.append((term_code, label))
+        # Summer
+        term_code = f"{year+1}1"
+        label = f"Summer {year}"
+        if int(term_code) <= 20261:
+            terms.append((term_code, label))
+        # Spring
+        term_code = f"{year}5"
+        label = f"Spring {year}"
+        terms.append((term_code, label))
+
+    # Remove Spring 2014 (20145) if present
+    terms = [t for t in terms if t[0] != "20145"]
+    # Sort reverse chronologically
+    terms.sort(reverse=True)
+    # Add "All" option at the top
+    terms.insert(0, ("", "All Terms"))
+    return terms, f"{default_term[0]}{default_term[1]}"
+
+
+TERM_CHOICES, DEFAULT_TERM = get_term_choices()
+
+
 class SearchForm(FlaskForm):
     """Form for searching courses with various filters."""
 
@@ -146,32 +188,17 @@ class SearchForm(FlaskForm):
         render_kw={"placeholder": "e.g., 241"},
     )
 
-    # Time period fields
-    semester = SelectField(
-        "Semester",
-        choices=[
-            ("", "All"),
-            ("Fall", "Fall"),
-            ("Summer", "Summer"),
-            ("Spring", "Spring"),
-        ],
+    term = SelectField(
+        "Term",
+        choices=TERM_CHOICES,
         validators=[Optional()],
-        default="Fall",
-    )
-
-    year = SelectField(
-        "Year", choices=YEAR_CHOICES, validators=[Optional()], default="2026"
+        default=DEFAULT_TERM,
     )
 
     def validate(self, extra_validators=None):
         """Custom validation for form fields."""
         if not super().validate(extra_validators):
             return False
-
-        # If semester == 'All' or year == 'All', set both to 'All'
-        if self.semester.data == "" or self.year.data == "":
-            self.semester.data = ""
-            self.year.data = ""
 
         # If selected subject_or_college is a divider (shouldn't happen with disabled options, but good to check)
         if self.subject_or_college.data == "_":
@@ -180,10 +207,10 @@ class SearchForm(FlaskForm):
             )
             return False
 
-        # Check for Spring 2014 - we don't have data for this
-        if self.semester.data == "Spring" and self.year.data == "2015":
-            self.semester.errors.append(
-                "Spring 2014 data is not available. Data starts from Fall 2014."
+        # Remove Spring 2014 check (20145)
+        if self.term.data == "20145":
+            self.term.errors.append(
+                "Spring 2014 data is not available. Data starts from Summer 2014."
             )
             return False
 
@@ -219,14 +246,11 @@ class SearchForm(FlaskForm):
 
     def has_filters(self):
         """Check if any meaningful filters are applied."""
-        # Check if time period is meaningful (not both 'All')
-        time_period_filtered = not (self.semester.data == "" and self.year.data == "")
-
         return any(
             [
                 self.subject_or_college.data,
                 self.course_type.data,
                 self.class_code.data,
-                time_period_filtered,
+                self.term.data,
             ]
         )

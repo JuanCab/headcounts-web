@@ -119,19 +119,13 @@ def build_url(form):
     Priority:
       1) subject_or_college
       2) course_type (lasc, wi, 18online)
-      3) semester/year (term)
+      3) term
       4) class_code
     """
-
-    """
-    If no form data is provided, return '/all'.
-    """
-    # Check if all fields are empty or default
     if not (
         (form.subject_or_college.data and form.subject_or_college.data.strip())
         or (form.course_type.data and form.course_type.data.strip())
-        or (form.semester.data and form.semester.data.strip())
-        or (form.year.data and str(form.year.data).strip())
+        or (form.term.data and form.term.data.strip())
         or (form.class_code.data and form.class_code.data.strip())
     ):
         return "/all"
@@ -142,8 +136,6 @@ def build_url(form):
     target = (form.subject_or_college.data or "").strip().lower()
     if target:
         parts.append(target)
-
-    # 2) Course Type (only if subject/college is NOT selected)
     else:
         ctype = (form.course_type.data or "").strip()
         if ctype:
@@ -152,16 +144,9 @@ def build_url(form):
             else:
                 parts.append(ctype)
 
-    # 3) Term (semester + year combined)
-    term = None
-    if form.semester.data and form.year.data:
-        term_map = {"Spring": "5", "Summer": "1", "Fall": "3"}
-        sem = form.semester.data
-        yr = int(form.year.data)
-        if sem == "Spring":
-            yr -= 1
-        term = f"{yr}{term_map.get(sem, '')}"
-        parts.append(term)
+    # 3) Term
+    if form.term.data:
+        parts.append(form.term.data)
 
     # 4) Class code (if provided)
     if form.class_code.data:

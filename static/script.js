@@ -4,8 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const subjectOrCollege = document.getElementById('subject_or_college');
     const classCodeContainer = document.getElementById('classCodeContainer');
     const primaryRow = document.querySelector('.form-section .row');
-    const semesterField = document.getElementById('semester');
-    const yearField = document.getElementById('year');
+    const termField = document.getElementById('term');
 
     // Invalid values that should not show class code field
     const invalidValues = [
@@ -130,16 +129,10 @@ document.addEventListener('DOMContentLoaded', function() {
         classCodeField.addEventListener('blur', validateClassCode);
     }
 
-    // Time period fields real-time error clearing
-    if (semesterField) {
-        semesterField.addEventListener('change', function() {
-            clearFieldErrors(semesterField);
-        });
-    }
-    
-    if (yearField) {
-        yearField.addEventListener('change', function() {
-            clearFieldErrors(yearField);
+    // Term field real-time error clearing
+    if (termField) {
+        termField.addEventListener('change', function() {
+            clearFieldErrors(termField);
         });
     }
 
@@ -165,14 +158,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Form submission validation
     form.addEventListener('submit', function(e) {
-        // Apply time period rule only on form submission
-        if (semesterField && yearField) {
-            if (semesterField.value === '' || yearField.value === '') {
-                semesterField.value = '';
-                yearField.value = '';
-            }
-        }
-
         // Final validation check before submission
         validateClassCode();
 

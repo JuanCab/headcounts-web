@@ -82,27 +82,16 @@
                             </div>
                         </div>
 
-                        <!-- Time Period Section -->
+                        <!-- Term Section -->
                         <div class="form-section">
-                            <h4><i class="fas fa-calendar-alt"></i>Time Period</h4>
+                            <h4><i class="fas fa-calendar-alt"></i>Term</h4>
                             <div class="row g-4">
-                                <div class="col-md-6">
-                                    {{ form.semester.label(class="form-label") }}
-                                    {{ form.semester(class="form-select" + (" is-invalid" if form.semester.errors else "")) }}
-                                    {% if form.semester.errors %}
+                                <div class="col-md-12">
+                                    {{ form.term.label(class="form-label") }}
+                                    {{ form.term(class="form-select" + (" is-invalid" if form.term.errors else "")) }}
+                                    {% if form.term.errors %}
                                         <div class="invalid-feedback">
-                                            {% for error in form.semester.errors %}
-                                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                                <div class="col-md-6">
-                                    {{ form.year.label(class="form-label") }}
-                                    {{ form.year(class="form-select" + (" is-invalid" if form.year.errors else "")) }}
-                                    {% if form.year.errors %}
-                                        <div class="invalid-feedback">
-                                            {% for error in form.year.errors %}
+                                            {% for error in form.term.errors %}
                                                 <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
                                             {% endfor %}
                                         </div>
@@ -112,8 +101,7 @@
                             <div class="mt-3">
                                 <div class="alert alert-info" role="alert">
                                     <i class="fas fa-info-circle me-2"></i>
-                                    <strong>Note:</strong> When you submit the search, if either semester or year is set to "All", both will be set to "All" to include all available terms. 
-                                    The default selection is the upcoming semester (Fall 2025).
+                                    <strong>Note:</strong> Select a specific term or "All Terms" to include all available semesters. The default is the upcoming semester (Fall 2025).
                                 </div>
                             </div>
                         </div>

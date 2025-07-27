@@ -23,9 +23,11 @@ A simple web app for displaying (reasonably) up-to-date enrollments in courses a
 
 ## Credits
 
-- **Original version developed by:** [Matthew Craig](https://github.com/mwcraig/)
-- **Backend upgraded to use Polars and currently maintained by:** [Juan Cabanela](https://web.mnstate.edu/cabanela/)
-- **GUI redesign and front-end development:** [Natoli Tesgera](https://github.com/Natoli74)  
+- UI icons: [Font Awesome](https://fontawesome.com/)
+- Fonts: [Google Fonts](https://fonts.google.com/) (Montserrat, Tinos)
+- Original version developed by: [Matthew Craig](https://github.com/mwcraig/)
+- Backend upgraded to use Polars and currently maintained by: [Juan Cabanela](https://web.mnstate.edu/cabanela/)
+- GUI redesign and front-end development: [Natoli Tesgera](https://github.com/Natoli74)  
 
 ---
 

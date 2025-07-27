@@ -318,6 +318,12 @@ body {
     color: #004085;
 }
 
+/* Advanced Instructions */
+.advanced-instructions {
+    margin: 0;
+
+}
+
 /* RESULTS */
 .results-header {
     background: #f8f9fa;

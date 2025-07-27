@@ -105,6 +105,20 @@ def build_url(form):
       3) semester/year (term)
       4) class_code
     """
+
+    """
+    If no form data is provided, return '/all'.
+    """
+    # Check if all fields are empty or default
+    if not (
+        (form.subject_or_college.data and form.subject_or_college.data.strip()) or
+        (form.course_type.data and form.course_type.data.strip()) or
+        (form.semester.data and form.semester.data.strip()) or
+        (form.year.data and str(form.year.data).strip()) or
+        (form.class_code.data and form.class_code.data.strip())
+    ):
+        return "/all"
+
     parts = []
 
     # 1) Subject or College
@@ -119,7 +133,7 @@ def build_url(form):
             if ctype == "18":
                 parts.append("18online")
             else:
-                 parts.append(ctype)
+                parts.append(ctype)
 
     # 3) Term (semester + year combined)
     term = None
@@ -138,7 +152,7 @@ def build_url(form):
 
     return "/" + "/".join(parts) if parts else "/"
 
-
+# Suggest changing the route to '/' for conflicts with existing users
 @app.route('/search', methods=['GET', 'POST'])
 def search():
     """

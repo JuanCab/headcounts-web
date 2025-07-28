@@ -290,8 +290,9 @@ def main(new_data_file):
     print(f"Found {len(semesters_list)} unique semesters to write to {SEMESTER_PY}")
     with open(SEMESTER_PY, 'w') as f:
         f.write("SEMESTERS_LIST = [\n")
+        # Make the list of tuples, year_term as integer and Term as string
         for semester in semesters_list:
-            f.write(f"    ('{semester['year_term']}', '{semester['Term']}'),\n")
+            f.write(f"    ({semester['year_term']}, '{semester['Term']}'),\n")
         f.write("]\n")
 
     # Return the resulting dataframe

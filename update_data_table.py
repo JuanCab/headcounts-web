@@ -22,7 +22,7 @@
 
 import polars as pl
 from datetime import datetime
-from config import CSV_DATA, PARQUET_DATA, SETUP_DIR, BACKUP_DIR
+from config import CSV_DATA, PARQUET_DATA, SETUP_DIR, BACKUP_DIR, SEMESTER_PY
 
 
 def add_index_col(df):
@@ -278,6 +278,22 @@ def main(new_data_file):
     # Dump the parquet file
     result_df.write_parquet(PARQUET_DATA)
     print(f"Updated data saved to {CSV_DATA} and {PARQUET_DATA}")
+
+    # Dump out a list of tuples consisting lf all the unique year_terms 
+    # and the corresponding Semester name into a Python file to be 
+    # imported later.  This is the SEMESTER_PY file which defines the
+    # SEMESTERS_LIST variable.
+    semesters_list = result_df.select(
+        pl.col('Fiscal yrtr').cast(str).alias('year_term'),
+        pl.col('Term')
+    ).unique().sort('year_term', descending=True).to_dicts()
+    print(f"Found {len(semesters_list)} unique semesters to write to {SEMESTER_PY}")
+    with open(SEMESTER_PY, 'w') as f:
+        f.write("SEMESTERS_LIST = [\n")
+        # Make the list of tuples, year_term as integer and Term as string
+        for semester in semesters_list:
+            f.write(f"    ({semester['year_term']}, '{semester['Term']}'),\n")
+        f.write("]\n")
 
     # Return the resulting dataframe
     return result_df

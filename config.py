@@ -30,3 +30,6 @@ SETUP_DIR = 'assets/'
 
 # Define the directory where backup files are stored
 BACKUP_DIR = 'backups/'
+
+# Python file to import for list of semesters
+SEMESTER_PY = 'config_terms.py'

@@ -538,76 +538,85 @@ def process_data_request(render_me, path, subj_text):
 def filter_data_advanced(tbl, **filters):
     """
     Advanced filtering function that accepts multiple filter parameters for form-based filtering.
-
-    Parameters
-    ----------
-    tbl : polars Lazy DataFrame
-        The table containing course data to be filtered.
-    **filters : dict
-        Filter parameters that can include:
-            - college: str (college code like 'CBAC', 'COAH', etc.)
-            - subject: str (subject like 'CSCI', 'MATH', etc.)
-            - course_number: str (course number like '241', '101', etc.)
-            - term: str (year/term code like '20231', '20235', etc.)
-            - lasc_area: str (LASC area like '1A', '2B', etc.)
-            - online_only: bool (filter for online courses only)
-            - wi_only: bool (filter for WI courses only)
-            - all_courses: bool (if True, ignore other filters and return all courses)
-
-    Returns
-    -------
-    polars Lazy DataFrame
-        A Polars LazyFrame with the applied filters.
-    str
-        A string representation of the filters applied.
+    Supports flexible term filtering: 'All Semesters' or 'All Years'.
     """
     filtered_table = tbl
     filter_descriptions = []
 
-    # Handle 'all_courses' special case
-    if filters.get('all_courses'):
-        filtered_table = filtered_table
-        filter_descriptions.append("All Courses")
-    else:
-        # Apply college filter
-        if filters.get('college'):
-            college = filters['college'].upper()
-            filtered_table = filtered_table.filter(pl.col('College') == college)
-            filter_descriptions.append(f"College: {college}")
-        # Apply subject filter
-        if filters.get('subject'):
-            subject = filters['subject'].upper()
-            filtered_table = filtered_table.filter(pl.col('Subj') == subject)
-            filter_descriptions.append(f"Subject: {subject}")
-        # Apply course number filter
-        if filters.get('course_number'):
-            course_num = filters['course_number']
-            filtered_table = filtered_table.filter(pl.col('#') == course_num)
-            filter_descriptions.append(f"Course: {course_num}")
-        # Apply term filter
-        if filters.get('term'):
-            term = int(filters['term'])
-            filtered_table = filtered_table.filter(pl.col('Fiscal yrtr') == term)
-            # filter_descriptions.append(f"Term: {term}")
-        # Apply LASC area filter
-        if filters.get('lasc_area'):
-            lasc_area = filters['lasc_area'].upper()
-            filtered_table = filtered_table.filter(pl.col('LASC/WI').str.contains(lasc_area))
-            filter_descriptions.append(f"LASC Area: {lasc_area}")
-        # Apply online courses filter
-        if filters.get('online_only'):
-            filtered_table = filtered_table.filter(pl.col('18online'))
-            filter_descriptions.append("Online Courses Only")
-        # Apply WI courses filter
-        if filters.get('wi_only'):
-            filtered_table = filtered_table.filter(pl.col('LASC/WI').str.contains('WI'))
-            filter_descriptions.append("WI Courses Only")
+    # Subject or College
+    subj_col = filters.get('subject_or_college')
+    if subj_col:
+        subj_col_upper = subj_col.upper()
+        if subj_col_upper in ['CBAC', 'COAH', 'CSHE', 'CEHS', 'NONE']:
+            filtered_table = filtered_table.filter(pl.col('College') == subj_col_upper)
+            filter_descriptions.append(f"College: {subj_col_upper}")
+        else:
+            filtered_table = filtered_table.filter(pl.col('Subj') == subj_col_upper)
+            filter_descriptions.append(f"Subject: {subj_col_upper}")
 
-    subj_text = " | ".join(filter_descriptions) if filter_descriptions else "All Courses"
+    # Course Type
+    course_type = filters.get('course_type')
+    if course_type:
+        if course_type.startswith('/lasc'):
+            if course_type == '/lasc':
+                filtered_table = filtered_table.filter(
+                    (pl.col("LASC/WI").is_not_null()) & (pl.col("LASC/WI") != "WI")
+                )
+                filter_descriptions.append("LASC Courses")
+            else:
+                lasc_area = course_type.split('/')[-1].upper()
+                filtered_table = filtered_table.filter(pl.col('LASC/WI').str.contains(lasc_area))
+                filter_descriptions.append(f"LASC Area: {lasc_area}")
+        elif course_type == 'wi':
+            filtered_table = filtered_table.filter(pl.col("LASC/WI").str.contains("WI"))
+            filter_descriptions.append("Writing Intensive (WI)")
+        elif course_type == '18':
+            filtered_table = filtered_table.filter(pl.col('18online') == True)
+            filter_descriptions.append("18-Online Courses")
+
+    # Class Code
+    course_number = filters.get('course_number')
+    if course_number:
+        filtered_table = filtered_table.filter(pl.col('#') == course_number)
+        filter_descriptions.append(f"Class Code: {course_number}")
+
+    # Time period logic
+    semester = filters.get('semester')
+    year = filters.get('year')
+    term_map = {'Spring': '5', 'Summer': '1', 'Fall': '3'}
+
+    if semester and year:
+        if year == "%" and semester != "_":
+            # Specific semester, all years
+            sem_digit = term_map.get(semester)
+            filtered_table = filtered_table.filter(
+                pl.col('Fiscal yrtr').cast(pl.Utf8).str.ends_with(sem_digit)
+            )
+        elif year != "%" and semester == "_":
+            # All semesters for a specific year
+            year_int = int(year)
+            terms = [str(year_int - 1) + "5", str(year_int) + "1", str(year_int) + "3"]
+            filtered_table = filtered_table.filter(
+                pl.col('Fiscal yrtr').is_in([int(t) for t in terms])
+            )
+        elif year != "%" and semester != "_":
+            # Specific semester and year
+            year_int = int(year)
+            sem_digit = term_map.get(semester)
+            if semester == "Spring":
+                year_int -= 1
+            term_code = str(year_int) + sem_digit
+            filtered_table = filtered_table.filter(pl.col('Fiscal yrtr') == int(term_code))
+        elif year == "%" and semester == "_":
+            pass  
+
+            
+
     filtered_table = filtered_table.sort(
         by=['Fiscal yrtr', 'Subj', '#', 'Sec'],
         descending=[False, False, False, False]
     )
+    subj_text = " | ".join(filter_descriptions) if filter_descriptions else "All Courses"
     return filtered_table, subj_text
 
 

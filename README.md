@@ -1,4 +1,4 @@
-# headcounts
+# Headcounts
 
 A simple web app for displaying (reasonably) up-to-date enrollments in courses at [Minnesota State University Moorhead](http://www.mnstate.edu) for the current semester.
 
@@ -36,5 +36,4 @@ A simple web app for displaying (reasonably) up-to-date enrollments in courses a
 
 - Data processed with [Polars](https://pola.rs/)
 - Hosted by [Heroku](https://www.heroku.com/)
-- Inspired by the needs of MSUM faculty and staff
 - Thanks to [Kenneth Reitz](https://github.com/kennethreitz/) for the [conda buildpack for Heroku](https://github.com/kennethreitz/conda-buildpack)

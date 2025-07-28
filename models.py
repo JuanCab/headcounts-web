@@ -2,6 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import SelectField, StringField
 from wtforms.validators import Length, Optional, ValidationError
 from datetime import datetime
+from config_terms import SEMESTERS_LIST
 
 # College and subject choices for form dropdowns
 COLLEGES = [
@@ -93,12 +94,10 @@ SUBJECTS = [
     ("WS", "Women's Studies"),
 ]
 
-YEAR_CHOICES = [("", "All Years")] + [
-    (str(year + 1), str(year)) for year in range(datetime.now().year, 2013, -1)
-]
 
 COURSE_TYPES = [
     ("", "Select Course Type"),
+    ("lasc", "All LASC Areas"),
     ("lasc/1", "Area 1 - Communication"),
     ("lasc/1a", "Area 1A - Oral Communication"),
     ("lasc/1b", "Area 1B - Written Communication"),
@@ -115,48 +114,6 @@ COURSE_TYPES = [
     ("wi", "Writing Intensive (WI)"),
     ("18", "18-Online"),
 ]
-
-
-def get_term_choices():
-    """Generate term choices from Summer 2014 to Fall 2025, reverse chronological."""
-    terms = []
-    now = datetime.now()
-    # Determine the upcoming semester
-    if now.month >= 8:
-        default_term = (now.year + 1, 3)
-    elif now.month >= 5:
-        default_term = (now.year + 1, 3)
-    elif now.month >= 1:
-        default_term = (now.year + 1, 1)
-    else:
-        default_term = (now.year, 5)
-
-    for year in range(2025, 2013, -1):
-        # Fall
-        term_code = f"{year+1}3"
-        label = f"Fall {year}"
-        if int(term_code) <= 20263:
-            terms.append((term_code, label))
-        # Summer
-        term_code = f"{year+1}1"
-        label = f"Summer {year}"
-        if int(term_code) <= 20261:
-            terms.append((term_code, label))
-        # Spring
-        term_code = f"{year}5"
-        label = f"Spring {year}"
-        terms.append((term_code, label))
-
-    # Remove Spring 2014 (20145) if present
-    terms = [t for t in terms if t[0] != "20145"]
-    # Sort reverse chronologically
-    terms.sort(reverse=True)
-    # Add "All" option at the top
-    terms.insert(0, ("", "All Terms"))
-    return terms, f"{default_term[0]}{default_term[1]}"
-
-
-TERM_CHOICES, DEFAULT_TERM = get_term_choices()
 
 
 class SearchForm(FlaskForm):
@@ -190,9 +147,9 @@ class SearchForm(FlaskForm):
 
     term = SelectField(
         "Term",
-        choices=TERM_CHOICES,
+        choices= [("", "All Terms")] + SEMESTERS_LIST,
         validators=[Optional()],
-        default=DEFAULT_TERM,
+        default=SEMESTERS_LIST[0][0],
     )
 
     def validate(self, extra_validators=None):
@@ -204,13 +161,6 @@ class SearchForm(FlaskForm):
         if self.subject_or_college.data == "_":
             self.subject_or_college.errors.append(
                 "Please select a valid subject or college, not a divider."
-            )
-            return False
-
-        # Remove Spring 2014 check (20145)
-        if self.term.data == "20145":
-            self.term.errors.append(
-                "Spring 2014 data is not available. Data starts from Summer 2014."
             )
             return False
 

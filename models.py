@@ -1,7 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import SelectField, StringField
 from wtforms.validators import Length, Optional, ValidationError
-from datetime import datetime
 from config_terms import SEMESTERS_LIST
 
 # College and subject choices for form dropdowns
@@ -112,7 +111,7 @@ COURSE_TYPES = [
     ("lasc/9", "Area 9 - Ethical/Civic Responsibility"),
     ("lasc/10", "Area 10 - People and the Environment"),
     ("wi", "Writing Intensive (WI)"),
-    ("18", "18-Online"),
+    ("18online", "18-Online"),
 ]
 
 

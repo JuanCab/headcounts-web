@@ -593,9 +593,9 @@ def filter_data_advanced(tbl, **filters):
                 pl.col('Fiscal yrtr').cast(pl.Utf8).str.ends_with(sem_digit)
             )
         elif year != "%" and semester == "_":
-            # All semesters for a specific year
+            # Full Academic Term, summer-fall-spring
             year_int = int(year)
-            terms = [str(year_int - 1) + "5", str(year_int) + "1", str(year_int) + "3"]
+            terms = [str(year_int) + "1", str(year_int) + "3", str(year_int) + "5"]
             filtered_table = filtered_table.filter(
                 pl.col('Fiscal yrtr').is_in([int(t) for t in terms])
             )

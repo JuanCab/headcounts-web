@@ -12,7 +12,7 @@
             <!-- Show the subject searched for, with line breaks -->
             <p class="text-muted mb-2">{{ subject|replace('\n', '<br>')|safe }}</p>
             <p class="lead">No courses matched your search. Please adjust your filters and try again.</p>
-            <a href="{{ url_for('search') }}" class="btn btn-search mt-3">
+            <a href="{{ url_for('index') }}" class="btn btn-search mt-3">
                 <i class="fas fa-arrow-left me-2"></i>Back to Search
             </a>
         </div>
@@ -59,7 +59,7 @@
                     </div>
                 </div>
                 <div class="col-md-3 d-flex flex-column align-items-md-end align-items-center justify-content-start">
-                    <a href="{{ url_for('search') }}" class="btn btn-search mb-3 w-100 w-md-auto">
+                    <a href="{{ url_for('index') }}" class="btn btn-search mb-3 w-100 w-md-auto">
                         <i class="fas fa-arrow-left me-2"></i>Back to Search
                     </a>
                 </div>

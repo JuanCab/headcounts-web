@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Invalid values that should not show class code field
     const invalidValues = [
         '', '_', '── COLLEGES ──', '── SUBJECTS ──',
-        'CBAC', 'COAH', 'CSHE', 'CEHS'
+        'CBAC', 'COAH', 'CSHE', 'CEHS', 'all'
     ];
     
     function isValidSubject(value) {
@@ -133,6 +133,23 @@ document.addEventListener('DOMContentLoaded', function() {
     if (termField) {
         termField.addEventListener('change', function() {
             clearFieldErrors(termField);
+
+            const termValue = termField.value.trim();
+            const subjectOrCollegeValue = subjectOrCollege ? subjectOrCollege.value.trim() : "";
+            const courseTypeValue = courseTypeField ? courseTypeField.value.trim() : "";
+            const allOption = Array.from(subjectOrCollege.options).find(opt => opt.value === "all");
+
+            if (
+                termValue !== "" && 
+                (!subjectOrCollegeValue || subjectOrCollegeValue === "") &&
+                (!courseTypeValue || courseTypeValue === "")
+            ) {
+                if (allOption) {
+                    subjectOrCollege.value = "all";
+                    updateClassCodeVisibility();
+                    clearFieldErrors(subjectOrCollege);
+                }
+            }
         });
     }
 
@@ -158,19 +175,41 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Form submission validation
     form.addEventListener('submit', function(e) {
-        // Final validation check before submission
         validateClassCode();
 
-        const hasAnyFilter = Array.from(form.elements).some(element => {
-            if (element.type === 'checkbox') return element.checked;
-            if (element.type === 'select-one' || element.type === 'text') return element.value.trim();
-            return false;
-        });
+        const subjectOrCollegeValue = subjectOrCollege ? subjectOrCollege.value.trim() : "";
+        const termValue = termField ? termField.value.trim() : "";
+        const courseTypeValue = courseTypeField ? courseTypeField.value.trim() : "";
+        const allTermsValue = ""; 
+        const allSubjectValue = "all"; 
 
-        if (!hasAnyFilter) {
+        if (
+            termValue === allTermsValue &&
+            (subjectOrCollegeValue === "" || subjectOrCollegeValue === allSubjectValue) &&
+            (!courseTypeValue || courseTypeValue === "")
+        ) {
             const proceed = confirm("Showing all courses - apply filters to narrow results. Continue?");
             if (!proceed) {
                 e.preventDefault();
+                return;
+            }
+        }
+        
+        const subjectOrCollegeValue2 = subjectOrCollege ? subjectOrCollege.value.trim() : "";
+        const courseTypeValue2 = courseTypeField ? courseTypeField.value.trim() : "";
+        const termValue2 = termField ? termField.value.trim() : "";
+        const allOption = Array.from(subjectOrCollege.options).find(opt => opt.value === "all");
+
+
+        if (
+            termValue2 && termValue2 !== "" && termValue2 !== termField.options[0].value &&
+            (!subjectOrCollegeValue2 || subjectOrCollegeValue2 === "") &&
+            (!courseTypeValue2 || courseTypeValue2 === "")
+        ) {
+            if (allOption) {
+                subjectOrCollege.value = "all";
+                updateClassCodeVisibility();
+                clearFieldErrors(subjectOrCollege);
             }
         }
     });

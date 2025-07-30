@@ -6,6 +6,7 @@ from config_terms import SEMESTERS_LIST
 # College and subject choices for form dropdowns
 COLLEGES = [
     ("", "Select College or Subject"),
+    ("all", "All"),  
     ("_", "── COLLEGES ──", {"disabled": True}),
     ("CBAC", "College of Business, Analytics, & Communication"),
     ("COAH", "College of Arts and Humanities"),
@@ -94,6 +95,7 @@ SUBJECTS = [
 ]
 
 
+# LASC Area 7A and 7B are to be recently added. When added, uncomment them. 
 COURSE_TYPES = [
     ("", "Select Course Type"),
     ("lasc", "All LASC Areas"),
@@ -107,6 +109,8 @@ COURSE_TYPES = [
     ("lasc/5", "Area 5 - History and Social Sciences"),
     ("lasc/6", "Area 6 - Humanities and Fine Arts"),
     ("lasc/7", "Area 7 - Human Diversity"),
+    # ("lasc/7a", "Area 7A - Human Diversity"),
+    # ("lasc/7b", "Area 7B - Race/Power/Justice"),
     ("lasc/8", "Area 8 - Global Perspective"),
     ("lasc/9", "Area 9 - Ethical/Civic Responsibility"),
     ("lasc/10", "Area 10 - People and the Environment"),

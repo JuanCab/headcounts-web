@@ -36,7 +36,7 @@
                         <i class="fas fa-info-circle me-2"></i>
                         This form helps search MSUM course headcounts. Prefer direct URL navigation? Scroll down for advanced instructions on crafting custom URLs.
                     </div>
-                    <form action="{{ url_for('search') }}" method="POST" id="courseSearchForm">
+                    <form action="{{ url_for('index') }}" method="POST" id="courseSearchForm">
                         {{ form.hidden_tag() }}
 
                         <!-- Primary Search Criteria -->

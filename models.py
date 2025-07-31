@@ -1,6 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import SelectField, StringField
 from wtforms.validators import Length, Optional, ValidationError
+from config import DEFAULT_TERM
 from config_terms import SEMESTERS_LIST
 
 # College and subject choices for form dropdowns
@@ -152,7 +153,7 @@ class SearchForm(FlaskForm):
         "Term",
         choices= [("", "All Terms")] + SEMESTERS_LIST,
         validators=[Optional()],
-        default=SEMESTERS_LIST[0][0],
+        default= DEFAULT_TERM, 
     )
 
     def validate(self, extra_validators=None):

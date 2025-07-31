@@ -430,7 +430,7 @@ def process_data_request(render_me, path, subj_text):
         subj_text = f"{subj_text} Data for {terms[0]} through {terms[-1]}"
     else:
         # If there is only one term, just show that term
-subj_text = f"{subj_text} Data for {terms[0]}"
+        subj_text = f"{subj_text} Data for {terms[0]}"
 
     # Get most recent and oldest timestamps from the DataFrame
     # to display in the rendered template.

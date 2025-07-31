@@ -33,3 +33,6 @@ BACKUP_DIR = 'backups/'
 
 # Python file to import for list of semesters
 SEMESTER_PY = 'config_terms.py'
+
+# Default term for the application
+DEFAULT_TERM = '20263'

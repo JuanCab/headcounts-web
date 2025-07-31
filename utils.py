@@ -1,12 +1,12 @@
 import re
 from pathlib import Path
 
-from config import CACHE_DIR, COURSE_DETAIL_URL
+from config import CACHE_DIR, COURSE_DETAIL_URL, DEFAULT_TERM
 from flask import render_template
 from great_tables import GT, html, loc, style
 import numpy as np
 import polars as pl
-import xlsxwriter
+import os
 
 #
 # This is an importable file of utility functions for the Flask app.
@@ -100,11 +100,8 @@ def filter_data(tbl, subject, spec1=None, spec2=None):
     # If no specific specs are provided and the subject is not 'all',
     # filter to only include the most recent year/term.
     if not specs and subject != 'all':
-        # Identify the most recent year/term in the dataset.
-        most_recent = ( filtered_table.select(pl.col("Fiscal yrtr").max())
-                 .collect()
-                 .item()
-                 )
+        # Identify the default year/term in the dataset.
+        most_recent = DEFAULT_TERM[0]
 
         # Filter the DataFrame to include only rows with the most recent
         # year/term if most_recent is not None.
@@ -556,7 +553,106 @@ def process_data_request(render_me, path, subj_text):
                            base_detail_url=COURSE_DETAIL_URL)
 
 
-# Kept for future enhancements
+def get_secret_key():
+    """
+    Retrieve the Flask SECRET_KEY for session and CSRF protection.
+
+    This function first attempts to get the secret key from the environment variable 'SECRET_KEY'.
+    If the environment variable is not set, it falls back to reading the key from a local file named '.flask_secret_key'.
+    This file should be excluded from version control (e.g., listed in .gitignore) to prevent accidental exposure of secrets.
+
+    Raises:
+        RuntimeError: If neither the environment variable nor the file is found, indicating that the secret key is missing.
+
+    Returns:
+        str: The secret key string to be used by Flask for cryptographic operations.
+
+    Security Note:
+        The secret key is required for securely signing session cookies and CSRF tokens.
+        Never hardcode the secret key in source code or commit it to version control.
+        Always use a strong, random value for production deployments.
+    """
+    # Try environment variable first
+    key = os.environ.get("SECRET_KEY")
+    if key:
+        return key
+    # Fallback: read from a file (not tracked by git)
+    try:
+        with open(".flask_secret_key") as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        raise RuntimeError("SECRET_KEY not set and .flask_secret_key file not found!")
+
+
+def build_url(form):
+    """
+    Build a clean /<college_or_subject>/<term>/<class_code> style URL.
+    Priority:
+      1) subject_or_college
+      2) course_type (lasc, wi, 18online)
+      3) term
+      4) class_code
+
+    Parameters
+    ----------
+
+    form : SearchForm
+        The form containing the search parameters.
+
+    Returns
+    -------
+    str
+        The constructed URL based on the form data.
+    """
+
+    # If no search parameters are provided, return the default URL
+    # for all courses.
+    if not (
+        (form.subject_or_college.data and form.subject_or_college.data.strip())
+        or (form.course_type.data and form.course_type.data.strip())
+        or (form.term.data and form.term.data.strip())
+        or (form.class_code.data and form.class_code.data.strip())
+    ):
+        return "/all"
+
+    parts = []
+
+    # 1) Subject or College
+    target = (form.subject_or_college.data or "").strip().lower()
+    if target:
+        parts.append(target)
+    else:
+        ctype = (form.course_type.data or "").strip()
+        if ctype:
+            if ctype == "18":
+                parts.append("18online")
+            else:
+                parts.append(ctype)
+
+    # 2) Get values for logic
+    term_val = (form.term.data or "").strip()
+    upcoming_term = str(DEFAULT_TERM[0]) 
+    subject_val = (form.subject_or_college.data or "").strip().lower()
+    course_type_val = (form.course_type.data or "").strip()
+
+    # 3) Term: Only include if NOT the upcoming term when a specific 
+    #    subject/college is selected, otherwise include it.
+    if term_val:
+        if not (
+            term_val == upcoming_term and (subject_val and subject_val != "all")
+        ):
+            parts.append(term_val)
+
+    # 4) Class code (if provided)
+    if form.class_code.data:
+        parts.append(form.class_code.data.strip())
+
+    return "/" + "/".join(parts) if parts else "/"
+
+
+###
+### Kept for future enhancements
+###
 def filter_data_advanced(tbl, **filters):
     """
     Advanced filtering function that accepts multiple filter parameters for form-based filtering.
@@ -631,8 +727,6 @@ def filter_data_advanced(tbl, **filters):
             filtered_table = filtered_table.filter(pl.col('Fiscal yrtr') == int(term_code))
         elif year == "%" and semester == "_":
             pass  
-
-            
 
     filtered_table = filtered_table.sort(
         by=['Fiscal yrtr', 'Subj', '#', 'Sec'],

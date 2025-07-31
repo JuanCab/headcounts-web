@@ -1,12 +1,12 @@
 import re
 from pathlib import Path
 
-import numpy as np
+from config import CACHE_DIR, COURSE_DETAIL_URL
 from flask import render_template
+from great_tables import GT, html, loc, style
+import numpy as np
 import polars as pl
-from great_tables import GT, html, style, loc
 import xlsxwriter
-from config import COURSE_DETAIL_URL, CACHE_DIR
 
 #
 # This is an importable file of utility functions for the Flask app.
@@ -84,7 +84,7 @@ def filter_data(tbl, subject, spec1=None, spec2=None):
     elif subject == 'wi':
         filtered_table = tbl.filter(pl.col("LASC/WI").str.contains("WI"))
     elif subject == '18online':
-        filtered_table = tbl.filter(pl.col('18online') == True)
+        filtered_table = tbl.filter(pl.col('18online'))
     elif subject == 'all':
         # No filtering, just return the original LazyFrame
         filtered_table = tbl
@@ -334,7 +334,7 @@ def generate_datafiles(table, path, subj_text, dir=CACHE_DIR):
     """
     Generates a CSV file and an Excel file containing all the data in
     this dataframe and save it to the cache directory. The filename is
-    generated based on the URL path and the average timestamp of the
+    generated based on the subject text and the average timestamp of the
     courses in the table. The average timestamp is used to ensure that
     the filename is unique for each view, even if the same path is
     accessed multiple times.
@@ -352,18 +352,15 @@ def generate_datafiles(table, path, subj_text, dir=CACHE_DIR):
     dir : str, optional
         The directory where the CSV file will be saved. Defaults to
         the CACHE_DIR defined in the config.
-
     Returns
     -------
     str
         The name of the CSV datafile containing the course data for the
         specified view.
-
     str
         The name of the Excel datafile containing the course data for the
         specified view.
     """
-
     # Compute the average time for all courses in the dataframe based
     # on the "Last Updated" column and format it as a string
     # representation of the average time in the format YYYYMMDD-HHMMSS.
@@ -379,11 +376,14 @@ def generate_datafiles(table, path, subj_text, dir=CACHE_DIR):
         .alias("Last Updated")
     )
 
-    # path always starts with a leading /, remove it
-    rel_path = path[1:]
-    parts = rel_path.split('/')
-    parts.append(avg_time)
-    csv_file = '-'.join(parts) + '.csv'
+    # Use a sanitized version of subj_text for the filename
+    safe_subj_text = sanitize_excel_sheetname(subj_text).replace(" ", "_").replace("\n", "_")
+    # Optionally, you can further clean up the string if needed
+
+    # Compose the filename
+    filename_base = f"{safe_subj_text}-{avg_time}"
+
+    csv_file = f"{filename_base}.csv"
     csv_path = Path(CACHE_DIR) / csv_file
 
     # Check if files already exist, if not, write the dataframe to both
@@ -392,12 +392,13 @@ def generate_datafiles(table, path, subj_text, dir=CACHE_DIR):
         table.write_csv(csv_path)
 
     # Define formatting and other information for the Excel file
-    excel_file = '-'.join(parts) + '.xlsx'
+    excel_file = f"{filename_base}.xlsx"
     excel_path = Path(CACHE_DIR) / excel_file
-    table.write_excel(excel_path, worksheet=subj_text[:31])
+    table.write_excel(excel_path, worksheet=sanitize_excel_sheetname(subj_text))
 
     # Return the names of the files
     return csv_file, excel_file
+
 
 
 def process_data_request(render_me, path, subj_text):
@@ -433,7 +434,7 @@ def process_data_request(render_me, path, subj_text):
 
     # Check for an empty DataFrame, if so, return a custom response
     if render_me.is_empty():
-        return render_template('no_info.html', subject=subj_text)
+        return render_template('results.html', subject=subj_text, n_rows=0)
 
     # Determine all the unique 'Term' in this polars Dataframe, sorted
     # by Fiscal year/term,
@@ -539,8 +540,8 @@ def process_data_request(render_me, path, subj_text):
                      .as_raw_html()
     )
 
-    # Render the page using the 'course_info.html' template,
-    return render_template('course_info.html',
+    # Render the page using the 'results.html' template,
+    return render_template('results.html',
                            rendered_table=rendered_html,
                            subject=subj_text,
                            n_rows=n_rows,
@@ -553,3 +554,98 @@ def process_data_request(render_me, path, subj_text):
                            seats=seats,
                            revenue=calulcated_tuition,
                            base_detail_url=COURSE_DETAIL_URL)
+
+
+# Kept for future enhancements
+def filter_data_advanced(tbl, **filters):
+    """
+    Advanced filtering function that accepts multiple filter parameters for form-based filtering.
+    Supports flexible term filtering: 'All Semesters' or 'All Years'.
+    """
+    filtered_table = tbl
+    filter_descriptions = []
+
+    # Subject or College
+    subj_col = filters.get('subject_or_college')
+    if subj_col:
+        subj_col_upper = subj_col.upper()
+        if subj_col_upper in ['CBAC', 'COAH', 'CSHE', 'CEHS', 'NONE']:
+            filtered_table = filtered_table.filter(pl.col('College') == subj_col_upper)
+            filter_descriptions.append(f"College: {subj_col_upper}")
+        else:
+            filtered_table = filtered_table.filter(pl.col('Subj') == subj_col_upper)
+            filter_descriptions.append(f"Subject: {subj_col_upper}")
+
+    # Course Type
+    course_type = filters.get('course_type')
+    if course_type:
+        if course_type.startswith('/lasc'):
+            if course_type == '/lasc':
+                filtered_table = filtered_table.filter(
+                    (pl.col("LASC/WI").is_not_null()) & (pl.col("LASC/WI") != "WI")
+                )
+                filter_descriptions.append("LASC Courses")
+            else:
+                lasc_area = course_type.split('/')[-1].upper()
+                filtered_table = filtered_table.filter(pl.col('LASC/WI').str.contains(lasc_area))
+                filter_descriptions.append(f"LASC Area: {lasc_area}")
+        elif course_type == 'wi':
+            filtered_table = filtered_table.filter(pl.col("LASC/WI").str.contains("WI"))
+            filter_descriptions.append("Writing Intensive (WI)")
+        elif course_type == '18':
+            filtered_table = filtered_table.filter(pl.col('18online') == True)
+            filter_descriptions.append("18-Online Courses")
+
+    # Class Code
+    course_number = filters.get('course_number')
+    if course_number:
+        filtered_table = filtered_table.filter(pl.col('#') == course_number)
+        filter_descriptions.append(f"Class Code: {course_number}")
+
+    # Time period logic
+    semester = filters.get('semester')
+    year = filters.get('year')
+    term_map = {'Spring': '5', 'Summer': '1', 'Fall': '3'}
+
+    if semester and year:
+        if year == "%" and semester != "_":
+            # Specific semester, all years
+            sem_digit = term_map.get(semester)
+            filtered_table = filtered_table.filter(
+                pl.col('Fiscal yrtr').cast(pl.Utf8).str.ends_with(sem_digit)
+            )
+        elif year != "%" and semester == "_":
+            # Full Academic Term, summer-fall-spring
+            year_int = int(year)
+            terms = [str(year_int) + "1", str(year_int) + "3", str(year_int) + "5"]
+            filtered_table = filtered_table.filter(
+                pl.col('Fiscal yrtr').is_in([int(t) for t in terms])
+            )
+        elif year != "%" and semester != "_":
+            # Specific semester and year
+            year_int = int(year)
+            sem_digit = term_map.get(semester)
+            if semester == "Spring":
+                year_int -= 1
+            term_code = str(year_int) + sem_digit
+            filtered_table = filtered_table.filter(pl.col('Fiscal yrtr') == int(term_code))
+        elif year == "%" and semester == "_":
+            pass  
+
+            
+
+    filtered_table = filtered_table.sort(
+        by=['Fiscal yrtr', 'Subj', '#', 'Sec'],
+        descending=[False, False, False, False]
+    )
+    subj_text = " | ".join(filter_descriptions) if filter_descriptions else "All Courses"
+    return filtered_table, subj_text
+
+
+def sanitize_excel_sheetname(name):
+    """
+    Sanitize a string to be a valid Excel sheet name (max 31 chars, no invalid chars).
+    """
+    invalid = r'[:\\/?*\[\]]'
+    name = re.sub(invalid, '', name)
+    return name[:31]

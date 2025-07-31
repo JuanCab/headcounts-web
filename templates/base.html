@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Minnesota State University Moorhead{% endblock %}</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tinos:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='custom.css') }}">
+    <link href="{{ url_for('static', filename='images/favicon1.ico') }}" rel="icon" >
+    {% block head %}  {% endblock %}
+</head>
+<body>
+    <div class="page-wrapper d-flex flex-column min-vh-100">
+        <!-- Header -->
+        <header class="header-section">
+            <div class="container">
+                <div class="header-content animate-fade-in">
+                    <img src="{{ url_for('static', filename='/images/MSUM-Logo.png') }}" alt="Logo" class="logo">
+                    <h1>
+                        <i class="fas fa-graduation-cap me-2"></i>
+                        Course Headcounts
+                    </h1>
+                </div>
+            </div>
+        </header>
+        <div class="main-content flex-grow-1">
+            {% block content %} {% endblock %}
+        </div>
+        <!-- Put in the Reuslts.html page once finished -->
+        <div class="container">
+            <div class="alert alert-warning mt-2 mb-0 medium text-center" role="alert" style="background: #fffbe6; color: #856404;">
+                <strong>Disclaimer:</strong> These are <b>NOT</b> real time results. Data is updated daily. The approximate time that the data was generated is shown above each table.
+                All data is scraped from <a href="{{ source_url }}">the public-facing MinnState-maintained course search tool</a>.
+            </div>
+        </div>
+        <!-- Footer -->
+        <footer class="site-footer border-top mt-4 py-3">
+            <div class="container">
+                <div class="row align-items-center text-muted">
+                    <div class="col-md-8 mb-2 mb-md-0">
+                        <small>
+                            Powered by <a href="https://github.com/mwcraig/headcounts-web" target="_blank">headcounts-web</a> &mdash;
+                            A <a href="http://flask.pocoo.org/" target="_blank">Flask</a> app styled with
+                            <a href="https://getbootstrap.com/" target="_blank">Bootstrap</a>.<br>
+                            Data processed with <a href="https://pola.rs/" target="_blank">Polars</a>.
+                            Hosted by <a href="https://www.heroku.com/" target="_blank">Heroku</a>.<br>
+                            UI icons by <a href="https://fontawesome.com/" target="_blank">Font Awesome</a>.
+                            Fonts from <a href="https://fonts.google.com/" target="_blank">Google Fonts</a>.
+                        </small>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <small>
+                            Original version developed by <a href="https://github.com/mwcraig/" target="_blank">Matthew Craig</a><br>
+                            Front-end &amp; GUI by <a href="https://github.com/Natoli74" target="_blank">Natoli Tesgera</a><br>
+                            Currently maintained by <a href="https://web.mnstate.edu/cabanela/" target="_blank">Juan Cabanela</a>
+                            
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            
+            <div class="container">
+                <p>
+                    <a href="https://www.mnstate.edu/"> Minnesota State University Moorhead </a> retains all rights to the MSUM logo and favicon.
+                </p>
+            </div>
+        </footer>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

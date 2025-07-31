@@ -1,5 +1,5 @@
 <!-- {% extends "base.html" %}
-{% block title %} Results {% endblock %}
+{% block title %} {{ subject|replace('\n', ' ')|safe }} {% endblock %}
 
 {% block content %}
 <div class='container'>

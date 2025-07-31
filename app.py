@@ -6,6 +6,7 @@ from pathlib import Path
 from config import (
     CACHE_DIR,
     COURSE_DATA_SOURCE_URL,
+    DEFAULT_TERM,
     PARQUET_DATA,
 )
 from config_terms import SEMESTERS_LIST
@@ -93,7 +94,7 @@ def index():
             return render_template("search.html", form=form)
 
     # GET (initial page or redirected after POST)
-    return render_template("search.html", form=form)
+    return render_template("search.html", form=form, default_term=DEFAULT_TERM)
 
 
 @app.route("/<subject>")

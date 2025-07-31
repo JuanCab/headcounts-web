@@ -153,7 +153,7 @@ class SearchForm(FlaskForm):
         "Term",
         choices= [("", "All Terms")] + SEMESTERS_LIST,
         validators=[Optional()],
-        default= DEFAULT_TERM, 
+        default= DEFAULT_TERM[0], 
     )
 
     def validate(self, extra_validators=None):

@@ -355,7 +355,7 @@ def generate_datafiles(table, path, subj_text, dir=CACHE_DIR):
     )
 
     # Use a sanitized version of subj_text for the filename
-    safe_subj_text = sanitize_excel_sheetname(subj_text).replace(" ", "_")
+    safe_subj_text = sanitize_excel_sheetname(subj_text).replace(" ", "_").replace("\n", "_")
     # Optionally, you can further clean up the string if needed
 
     # Compose the filename

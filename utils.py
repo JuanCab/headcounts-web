@@ -338,6 +338,28 @@ def generate_datafiles(table, path, subj_text, dir=CACHE_DIR):
     courses in the table. The average timestamp is used to ensure that
     the filename is unique for each view, even if the same path is
     accessed multiple times.
+
+    Parameters
+    ----------
+    table : polars Dataframe
+        The polars dataframe containing course data to be cached.
+    path : str
+        The URL path that got the user here, used to generate a unique
+        filename for the cached data.
+    subj_text : str
+        The description of the filtering applied to the table, used to
+        generate Excel worksheet name.
+    dir : str, optional
+        The directory where the CSV file will be saved. Defaults to
+        the CACHE_DIR defined in the config.
+    Returns
+    -------
+    str
+        The name of the CSV datafile containing the course data for the
+        specified view.
+    str
+        The name of the Excel datafile containing the course data for the
+        specified view.
     """
     # Compute the average time for all courses in the dataframe based
     # on the "Last Updated" column and format it as a string

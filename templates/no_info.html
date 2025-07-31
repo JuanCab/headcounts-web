@@ -3,7 +3,7 @@
 
 {% block content %}
 <div class='container'>
-<h2>{{ subject|replace('\n', '<br>')|safe }}</h2>
+<h2>{{ subject|replace('\n', ' ')|safe }}</h2>
 
 <p class="lead">This query led to an empty result.  Please check your query parameters again!</p>
 </div>

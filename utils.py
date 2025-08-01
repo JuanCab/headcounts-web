@@ -618,34 +618,28 @@ def build_url(form):
     parts = []
 
     # 1) Subject or College
-    target = (form.subject_or_college.data or "").strip().lower()
-    if target:
-        parts.append(target)
-    else:
-        ctype = (form.course_type.data or "").strip()
-        if ctype:
-            if ctype == "18":
-                parts.append("18online")
-            else:
-                parts.append(ctype)
+    subject_or_college = (form.subject_or_college.data or "").strip().lower()
+    course_type = (form.course_type.data or "").strip()
+    term = (form.term.data or "").strip()
+    class_code = (form.class_code.data or "").strip()
+    upcoming_term = str(DEFAULT_TERM[0])
 
-    # 2) Get values for logic
-    term_val = (form.term.data or "").strip()
-    upcoming_term = str(DEFAULT_TERM[0]) 
-    subject_val = (form.subject_or_college.data or "").strip().lower()
-    course_type_val = (form.course_type.data or "").strip()
+    if subject_or_college:
+        parts.append(subject_or_college)
+    elif course_type:
+        parts.append(course_type)
 
-    # 3) Term: Only include if NOT the upcoming term when a specific 
+    # 2) Term: Only include if NOT the upcoming term when a specific 
     #    subject/college is selected, otherwise include it.
-    if term_val:
+    if term:
         if not (
-            term_val == upcoming_term and (subject_val and subject_val != "all")
+            term == upcoming_term and (subject_or_college and subject_or_college != "all")
         ):
-            parts.append(term_val)
+            parts.append(term)
 
-    # 4) Class code (if provided)
-    if form.class_code.data:
-        parts.append(form.class_code.data.strip())
+    # 3) Class code (if provided)
+    if class_code:
+        parts.append(class_code)
 
     return "/" + "/".join(parts) if parts else "/"
 

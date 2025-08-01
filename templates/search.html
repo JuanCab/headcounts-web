@@ -101,7 +101,7 @@
                             <div class="mt-3">
                                 <div class="alert alert-info" role="alert">
                                     <i class="fas fa-info-circle me-2"></i>
-                                    <strong>Note:</strong> Select a specific term or "All Terms" to include all available semesters. The default is the upcoming semester ({{ default_term[1] }}).
+                                    <strong>Note:</strong> Select a specific term or "All Terms" to include all available semesters. The default is the upcoming semester (currently {{ default_term[1] }}).
                                 </div>
                             </div>
                         </div>
@@ -125,22 +125,24 @@
                     <div class="alert alert-secondary mb-4" style="font-size:1rem;">
                         <strong>Key Rules:</strong>
                         <ul class="mb-0">
-                            <li>The first thing after the site name is one of the items below. If that is the only thing you specify you will see data for the current or upcoming semester (depending on time of semester):</li>
+                            <li>The first thing after the site name is one of the items below. If that is the only thing you specify you will see data for the upcoming semester (currently {{ default_term[1] }}):</li>
                             <ul>
                                 <li>a subject (e.g. <code>phys</code> or <code>econ</code>, upper or lower case is fine) -- show courses in that subject</li>
                                 <li>a college code (allowed codes are <code>cbac</code>, <code>coah</code>, <code>cshe</code>, <code>cehs</code>, or <code>none</code>)</li>
-                                <li><code>all</code> -- show all courses.</li>
-                                <li><code>lasc</code> -- shows all LASC courses.</li>
-                                <li><code>wi</code> -- show all writing intensive courses.</li>
-                                <li><code>18online</code> -- show all 18-Online courses.</li>
+                                <li>a course type (one of the following):
+                                    <ul>
+                                        <li><code>all</code> -- all courses</li>
+                                        <li><code>lasc</code> -- LASC courses</li>
+                                        <li><code>wi</code> -- writing intensive courses</li>
+                                        <li><code>18online</code> -- 18-Online courses</li>
+                                    </ul>
+                                </li>
                             </ul>
-                            <li>You can narrow the results by adding any of these as the next part of the URL; add more than one to get more specific:</li>
+                            <li>You can narrow the results by adding any of these as the next part of the URL (you can add up to two of the following):</li>
                             <ul>
-                                <li>a "year term" code -- show all courses for specific year/term</li>
-                                <li>a course number -- show that course for all terms (if the course number ends with an underscore, it will match all courses starting with the digits before the underscore)</li>
-                                <li>an LASC area -- show only courses in that area for all years</li>
-                                <li><code>all</code> -- show all terms.</li>
-                                <li><code>18online</code> -- show all 18-Online courses.</li>
+                                <li>a course number -- if you have selected a subject, this will a specific course number in that subject for all terms (if the course number ends with an underscore, it will match all courses starting with the digits before the underscore)</li>
+                                <li>an LASC area -- if you selected a <code>lasc</code> course type, show only courses in that area for all years</li>
+                                <li>a "year term" code -- show all courses for specific year/term (use <code>all</code> to return all terms when not the default behavior, such as when searching a subject)</li>
                             </ul>
                         </ul>
                     </div>

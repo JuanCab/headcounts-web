@@ -1,4 +1,6 @@
 SEMESTERS_LIST = [
+    (20271, 'Summer 2026'),
+    (20265, 'Spring 2026'),
     (20263, 'Fall 2025'),
     (20261, 'Summer 2025'),
     (20255, 'Spring 2025'),

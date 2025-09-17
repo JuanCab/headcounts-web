@@ -21,6 +21,20 @@ A simple web app for displaying (reasonably) up-to-date enrollments in courses a
 
 ---
 
+## Updating for a New Semester
+
+When data for a new semesters' courses becomes available, the following steps
+are needed to update the app:
+
+1. Edit the `DEFAULT_TERM` variable in `config.py` to be a tuple with the
+    new term code and name (e.g., `('20265', 'Spring 2026')`)
+2. Edit the `SEMESTERS_LIST` list in `config_terms.py` to add a new tuple
+    with the new term code and name (e.g., `('20265', 'Spring 2026')`)
+    to the list.
+3. Edit `daily_update_script.sh` to change the `year_terms` variable to
+    a SPACE-delimited list of terms to scrape.
+---
+
 ## Credits
 
 - UI icons: [Font Awesome](https://fontawesome.com/)

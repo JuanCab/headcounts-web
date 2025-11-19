@@ -140,11 +140,11 @@ def main(new_data_file):
         pl.col('Loc').str.replace_all(r'zz', '').alias('Loc')
     )
 
-    # Sort the data year_term descending, then by Subj, #, Sec
-    result_df = result_df.sort(
-        by=['year_term', 'Subj', '#', 'Sec'],
-        descending=[False, False, False, False]
-    )
+    # # Sort the data year_term descending, then by Subj, #, Sec
+    # result_df = result_df.sort(
+    #     by=['year_term', 'Subj', '#', 'Sec'],
+    #     descending=[False, False, False, False]
+    # )
 
     # Save the updated dataframe to the CSV file
     result_df.write_csv(CSV_DATA)

@@ -19,6 +19,13 @@
 #   - Rename some columns to be a little clearer titles.
 #   - Precomputing the "term name" and adding that as a column.
 #   - Adding the college a particular rubric is associated with.
+#
+# November 19, 2025: Updated to fix an issue with courses that are
+#  no longer offered or in the course catalog somehow showing up, they
+#  were there at some pointbut now are not.  So when we update the
+#  data for a given semester, we first need to actually remove any
+#  entries for that semester from the current data before adding
+#  the new data for that semester.
 
 import polars as pl
 from datetime import datetime
@@ -68,70 +75,37 @@ def main(new_data_file):
     # Rename columns to match the current data format
     new_df = new_df.rename({'Enrolled:': 'Enrolled', 'Cr/Hr': 'Crds'})
 
+    # Determine the current semester from the new data
+    if 'year_term' not in new_df.columns:
+        raise ValueError("The new data file must contain a 'year_term' column.")
+    current_semester = new_df.select(pl.col('year_term')).unique().to_series()[0]
+    print(f"Semester for new data identified as year_term = {current_semester}.")
+
     # Add an index column to both dataframes
     new_df = add_index_col(new_df)
     current_df = add_index_col(current_df)
 
-    # Now the trick is to identity all the rows in the existing
+    # Previously I would identify all the rows in the existing
     # data file that need to be removed and replaced with the new
-    # data.
-    #
-    # Switch things up a bit, maybe. Do an outer join that includes all
-    # of the new data. This will be a lef join of the current data with
-    # the new data, which will include all of the new data and the
-    # matching rows of the current data set.
-    joined_df = new_df.join(current_df,
-                             on='index', how='left', suffix='_current')
+    # data. Now instead we will just remove all entries for the
+    # current semester from the existing data, and then add all
+    # of the new data for that semester.
 
-    # Identify the common entries in the joined dataframe and the
-    # unique entries in the new data that we need to append
-    common_entries_df = joined_df.filter(
-        pl.col('year_term_current').is_not_null()
+    # Count how many entries are being removed
+    num_before = len(current_df)
+    current_rows_to_keep = current_df.filter(
+        pl.col('year_term') != current_semester
     )
-    data_to_append_df = joined_df.filter(
-        pl.col('year_term_current').is_null()
-    )
+    num_after = len(current_rows_to_keep)
+    num_removed = num_before - num_after
+    print(f"Removing {num_removed} entries from current data for year_term = {current_semester}.")
 
-    # Update the current dataframe with the common data
-    if not common_entries_df.is_empty():
-        # Replace each current_df row with a matching index in the
-        # common_entries_df with the matching entries from the common_entries_df
-        print(f"Updated {len(common_entries_df)} common entries in the current data.")
-
-        # Get the updated data from the common entries
-        updated_rows_df = common_entries_df.select(
-            pl.exclude([col for col in common_entries_df.columns
-                        if col.endswith('_current')])
-        )
-
-        # Convert the 'index' column of updated_rows_df to a Python list
-        updated_indices = updated_rows_df['index'].to_list()
-
-        # Select all rows from current_df that are NOT in the
-        # updated_rows_df (based on index)
-        current_rows_to_keep = current_df.filter(
-            ~pl.col('index').is_in(updated_indices)
-        )
-
-        # Combine the rows that need to be kept with the updated rows
-        current_df = pl.concat([current_rows_to_keep, updated_rows_df])
-
-    # Make the current output dataframe based on the current dataframe
-    # assuming it has been updated with the common entries (if any)
-    result_df = current_df
-
-    # Now append any new data that is not already in the current
-    # dataframe.
-    if not data_to_append_df.is_empty():
-        print(f"Adding {len(data_to_append_df)} new entries in the current data.")
-        # Select the data to append, excluding the current data columns
-        new_rows_df = data_to_append_df.select(
-            pl.exclude([col for col in data_to_append_df.columns
-                        if col.endswith('_current')])
-        )
-
-        # Append the new data to the current dataframe
-        result_df = pl.concat([result_df, new_rows_df])
+    # Combine the rows that need to be kept with the updated rows
+    result_df = pl.concat([current_rows_to_keep, new_df])
+    num_final = len(result_df)
+    num_added = num_final - num_after
+    print(f"Added {num_added} new entries for year_term = {current_semester}.")
+    print(f"Current data now has {num_final} entries after removing old semester data and adding new data.")
 
     # Remove the (now unnecessary) index column from the result_df
     result_df = result_df.drop('index')
@@ -164,6 +138,12 @@ def main(new_data_file):
     # We remove ALL instances of "zz" in the location column.
     result_df = result_df.with_columns(
         pl.col('Loc').str.replace_all(r'zz', '').alias('Loc')
+    )
+
+    # Sort the data year_term descending, then by Subj, #, Sec
+    result_df = result_df.sort(
+        by=['year_term', 'Subj', '#', 'Sec'],
+        descending=[False, False, False, False]
     )
 
     # Save the updated dataframe to the CSV file

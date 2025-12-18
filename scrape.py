@@ -80,6 +80,8 @@ LASC_AREAS = [
     '5-History and the Social Sciences',
     '6-Humanities and Fine Arts',
     '7-Human Diversity',
+    '7A-Human Diversity',
+    '7B-Race/Power/Justice',
     '8-Global Perspective',
     '9-Ethical and Civic Responsibility',
     'WI-Writing Intensive',
@@ -441,6 +443,9 @@ def course_detail(params):
 
 
 if __name__ == '__main__':
+    # This is the main program that is run when scrape.py is executed
+    # from the command line. It uses argparse to handle command line
+    # arguments.
     parser = argparse.ArgumentParser(description='Scrape enrollment numbers '
                                      'from public MnSCU search site')
     parser.add_argument('--year-term', action='store',

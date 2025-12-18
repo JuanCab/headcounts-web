@@ -28,11 +28,12 @@ def filter_data(tbl, subject, spec1=None, spec2=None):
 
     subject : str
         The subject to filter by, which can be a course subject (e.g.,
-        'CSCI'), a 4-letter MSUM college code (valid codes are 'CBAC',
-        'COAH', 'CSHE', 'CEHS', or 'NONE'), a LASC area ('lasc'), a WI
-        course ('wi'), or '18online' for online courses. Setting it to
-        'all' will return the entire table without filtering (pending
-        other specified filters below).
+        'CSCI' or 'ANY' if you want to allow any subject), a 4-letter
+        MSUM college code (valid codes are 'CBAC', 'COAH', 'CSHE',
+        'CEHS', or 'NONE'), a LASC area ('lasc'), a WI course ('wi'), or
+        '18online' for online courses. Setting it to 'all' will return
+        the entire table without filtering (pending other specified
+        filters below).
 
     spec1 : str, optional
         The first specification to filter by, which can be a course
@@ -89,17 +90,47 @@ def filter_data(tbl, subject, spec1=None, spec2=None):
         # No filtering, just return the original LazyFrame
         filtered_table = tbl
         subj_text = "All"
+    elif subject == 'any':
+        # "any" means search by course number across all subjects
+        # Don't filter by subject yet - just pass through the full table
+        # The course number filtering will happen in the specs processing
+        filtered_table = tbl
+        subj_text = "Any Subject"
     else:
         # Regular academic subject to select
         filtered_table = tbl.filter(pl.col('Subj') == subject.upper())
 
-    # Collect the specifiers (spec1 and spec2) into a list (lowercased)
-    # after filtering out 'all' and Nones
-    specs = [s.lower() for s in [spec1, spec2] if s and s.lower() != 'all']
+    # Special handling for 'any' subject - requires a course number in spec1
+    if subject == 'any' and spec1:
+        spec1_lower = spec1.lower()
+        # Check if spec1 is a course number (not a term, not lasc/wi)
+        if (not (len(spec1_lower) == 5 and spec1_lower[-1] in ['1', '3', '5']) 
+            and spec1_lower not in ['lasc', 'wi']):
+            # spec1 is the course number to search across all subjects
+            if spec1_lower[-1] == '_':
+                # Wildcard course number
+                numcode = spec1_lower[:-1]
+                filtered_table = filtered_table.filter(
+                    pl.col('#').str.starts_with(numcode.upper())
+                )
+                subj_text = f"Any Subject - Course {numcode.upper()} (Any Variant)"
+            else:
+                # Exact course number
+                filtered_table = filtered_table.filter(
+                    pl.col('#') == spec1.upper()
+                )
+                subj_text = f"Any Subject - Course {spec1.upper()}"
+
+            # Now update specs to only include spec2 (if present) for term filtering
+            specs = [spec2.lower()] if spec2 and spec2.lower() != 'all' else []
+    else:
+        # Collect the specifiers (spec1 and spec2) into a list (lowercased)
+        # after filtering out 'all' and Nones
+        specs = [s.lower() for s in [spec1, spec2] if s and s.lower() != 'all']
 
     # If no specific specs are provided and the subject is not 'all',
-    # filter to only include the most recent year/term.
-    if not specs and subject != 'all':
+    # and not 'any' subject, then filter by the most recent year/term
+    if not specs and subject not in ['all', 'any']:
         # Identify the default year/term in the dataset.
         most_recent = DEFAULT_TERM[0]
 
@@ -488,7 +519,7 @@ def process_data_request(render_me, path, subj_text):
 
     # Rename the 'Fiscal yrtr' column to 'year_term' for clarity
     render_me = render_me.rename({'Fiscal yrtr': 'year_term'})
-    
+
     # Convert all the columns with money values to strings with
     # dollar signs and commas for thousands.
     money_cols = [ 'Tuition Resident', 'Tuition Non-Resident',
@@ -588,7 +619,7 @@ def build_url(form):
     """
     Build a clean /<college_or_subject>/<term>/<class_code> style URL.
     Priority:
-      1) subject_or_college
+      1) subject_or_college (any, all, college code, subject)
       2) course_type (lasc, wi, 18online)
       3) term
       4) class_code
@@ -624,12 +655,23 @@ def build_url(form):
     class_code = (form.class_code.data or "").strip()
     upcoming_term = str(DEFAULT_TERM[0])
 
+    # Special case: 'any' + class_code means course number search across all subjects
+    if subject_or_college == "any" and class_code:
+        parts.append("any")
+        parts.append(class_code)
+        # Add term if specified (always include it for 'any' searches)
+        if term:
+            parts.append(term)
+        print ("Generated URL parts:", "/" + "/".join(parts))
+        return "/" + "/".join(parts)
+
+    # Add subject_or_college or course_type
     if subject_or_college:
         parts.append(subject_or_college)
     elif course_type:
         parts.append(course_type)
 
-    # 2) Term: Only include if NOT the upcoming term when a specific 
+    # 2) Term: Only include if NOT the upcoming term when a specific
     #    subject/college is selected, otherwise include it.
     if term:
         if not (
@@ -720,7 +762,7 @@ def filter_data_advanced(tbl, **filters):
             term_code = str(year_int) + sem_digit
             filtered_table = filtered_table.filter(pl.col('Fiscal yrtr') == int(term_code))
         elif year == "%" and semester == "_":
-            pass  
+            pass
 
     filtered_table = filtered_table.sort(
         by=['Fiscal yrtr', 'Subj', '#', 'Sec'],

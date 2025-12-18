@@ -17,6 +17,7 @@ COLLEGES = [
 
 SUBJECTS = [
     ("_", "── SUBJECTS ──", {"disabled": True}),
+    ("ANY", "Any Subject"),
     ("ACCT", "Accounting"),
     ("AEM", "Audio Production & Entertainment Management"),
     ("AMCS", "American Multicultural Studies"),
@@ -177,7 +178,7 @@ class SearchForm(FlaskForm):
         if self.class_code.data:
             if not self.subject_or_college.data:
                 self.subject_or_college.errors.append(
-                    "Select a subject when using class codes"
+                    "Select 'Any Subject' or a specific subject when using class codes"
                 )
                 return False
 
@@ -189,10 +190,10 @@ class SearchForm(FlaskForm):
                 return False
 
             # Check if it's a college (not allowed with class codes)
-            college_codes = [c[0] for c in COLLEGES]
+            college_codes = [c[0] for c in COLLEGES if c[0] not in ["", "_"]]
             if self.subject_or_college.data in college_codes:
                 self.subject_or_college.errors.append(
-                    "Class codes require a subject selection, not a college"
+                    "Class codes cannot be used with college selections or 'All'. Use 'Any Subject' or select a specific subject."
                 )
                 return False
         return True

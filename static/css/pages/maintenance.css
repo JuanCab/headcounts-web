@@ -1,0 +1,21 @@
+/* ── Maintenance / error page ────────────────────────────────────────────── */
+
+.error-page {
+    max-width: 480px;
+    margin: var(--space-8) auto;
+    text-align: center;
+    padding: var(--space-6);
+}
+
+.error-page h1 {
+    font-size: 4rem;
+    font-weight: 800;
+    margin: 0 0 var(--space-4);
+    color: var(--color-text-muted);
+}
+
+.error-page p {
+    margin: 0 0 var(--space-6);
+    font-family: var(--font-secondary);
+    color: var(--color-text-muted);
+}

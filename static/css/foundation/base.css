@@ -1,0 +1,26 @@
+/* ── Reset & base ──────────────────────────────────────────────────────── */
+* {
+    box-sizing: border-box;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+html,
+body {
+    min-height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font-primary);
+    line-height: var(--line-default);
+    color: var(--color-text);
+    background: linear-gradient(180deg, var(--color-bg-soft) 0%, var(--color-bg) 100%);
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}

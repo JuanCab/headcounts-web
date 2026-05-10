@@ -1,0 +1,56 @@
+/* ── Notices ─────────────────────────────────────────────────────────────── */
+.notice {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    width: fit-content;
+    max-width: 100%;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-3) var(--space-4);
+    font-family: var(--font-secondary);
+    font-size: var(--text-sm);
+}
+
+.notice-dismiss {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: var(--text-lg);
+    line-height: 1;
+    color: currentColor;
+    opacity: 0.6;
+    padding: 0;
+}
+
+.notice-dismiss:hover {
+    opacity: 1;
+}
+
+/* ── Notice variants ──────────────────────────────────────────────────────── */
+.notice-info {
+    border-color: var(--color-info);
+    background: var(--color-info-soft);
+    color: var(--color-info);
+}
+
+.notice-success {
+    border-color: var(--color-success);
+    background: var(--color-success-soft);
+    color: var(--color-success);
+}
+
+.notice-warning {
+    border-color: var(--color-warning);
+    background: var(--color-warning-soft);
+    color: var(--color-warning);
+}
+
+.notice-error {
+    border-color: var(--color-error);
+    background: var(--color-error-soft);
+    color: var(--color-error);
+}
+

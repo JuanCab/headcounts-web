@@ -1,0 +1,21 @@
+/* ── Search page ─────────────────────────────────────────────────────────── */
+
+.hero-card {
+    max-width: 880px;
+    margin: 0 auto;
+}
+
+.hero-card h1,
+.hero-card h2 {
+    margin: 0 0 var(--space-3);
+    font-size: clamp(1.45rem, 1.25rem + 0.9vw, 2rem);
+    line-height: var(--line-title);
+    letter-spacing: -0.01em;
+}
+
+.hero-card p {
+    margin: 0;
+    max-width: 62ch;
+    color: var(--color-text-muted);
+    font-family: var(--font-secondary);
+}

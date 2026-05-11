@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const resetBtn = document.getElementById('resetBtn');
     const subjectOrCollege = document.getElementById('subject_or_college');
     const classCodeContainer = document.getElementById('classCodeContainer');
-    const primaryRow = document.querySelector('.form-section .row');
+    const primaryRow = document.getElementById('primaryRow');
     const termField = document.getElementById('term');
 
     // Invalid values that should not show class code field
@@ -213,4 +213,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+});
+
+// Notice dismiss handler
+document.addEventListener('click', function(e) {
+    if (e.target.matches('[data-dismiss="notice"]')) {
+        e.target.closest('.notice').remove();
+    }
 });

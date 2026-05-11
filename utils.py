@@ -764,3 +764,200 @@ def sanitize_excel_sheetname(name):
     invalid = r'[:\\/?*\[\]]'
     name = re.sub(invalid, '', name)
     return name[:31]
+
+
+# College code to full name mapping used on the analytics page
+COLLEGE_LABELS = {
+    'CBAC': 'Business, Analytics & Comm.',
+    'COAH': 'Arts & Humanities',
+    'CSHE': 'Science, Health & Env.',
+    'CEHS': 'Education & Human Services',
+    'NONE': 'Other',
+}
+
+
+def get_analytics_data(table, current_term=None):
+    """
+    Compute aggregated data for the analytics/overview page.
+
+    Parameters
+    ----------
+    table : polars DataFrame
+        The full enrollment dataset (not filtered).
+    current_term : int, optional
+        The fiscal year/term code to use as "current". Defaults to DEFAULT_TERM[0].
+
+    Returns
+    -------
+    dict
+        A JSON-serializable dict with all data needed by Chart.js on
+        the analytics template.
+    """
+    if current_term is None:
+        current_term = DEFAULT_TERM[0]
+
+    # Precompute integer credits and SCH per row so we can sum them
+    # in group_by aggregations without a separate pass.
+    tbl = table.with_columns(
+        filled_credits(table['Credits']).alias('IntCrd')
+    ).with_columns(
+        (pl.col('Enrolled') * pl.col('IntCrd')).alias('_sch')
+    )
+
+    # --- Enrollment + SCH + section counts by term ---
+    by_term = (
+        tbl
+        .group_by(['Fiscal yrtr', 'Term'])
+        .agg([
+            pl.col('Enrolled').sum().alias('enrollment'),
+            pl.col('_sch').sum().alias('sch'),
+            pl.len().alias('sections'),
+            (pl.col('Status') == 'Cancelled').sum().alias('cancelled'),
+        ])
+        .sort('Fiscal yrtr')
+    )
+
+    # --- Current term slice ---
+    current = tbl.filter(pl.col('Fiscal yrtr') == current_term)
+    term_name_df = current.select('Term').unique()
+    current_term_name = term_name_df.item() if len(
+        term_name_df) == 1 else str(current_term)
+
+    current_active = current.filter(pl.col('Status') != 'Cancelled')
+
+    total_enrolled = int(current_active['Enrolled'].sum(
+    )) if not current_active.is_empty() else 0
+    total_sch = int(current_active['_sch'].sum()
+                    ) if not current_active.is_empty() else 0
+    total_sections = len(current)
+    active_sections = len(current_active)
+    seats = calc_seats(current_active) if not current_active.is_empty() else {
+        'empty': 0, 'filled': 0, 'available': 0}
+    seat_fill_pct = round(
+        100 * seats['filled'] / seats['available'], 1) if seats['available'] else 0
+
+    # --- College breakdown for current term ---
+    by_college = (
+        current_active
+        .with_columns(pl.col('College').fill_null('NONE'))
+        .group_by('College')
+        .agg([
+            pl.col('Enrolled').sum().alias('enrollment'),
+            pl.col('Size').sum().alias('capacity'),
+        ])
+        .sort('enrollment', descending=True)
+    )
+
+    # --- Top 10 courses by total enrollment for current term ---
+    top_courses = (
+        current_active
+        .group_by(['Subj', '#', 'Title'])
+        .agg(pl.col('Enrolled').sum().alias('enrollment'))
+        .sort('enrollment', descending=True)
+        .head(10)
+    )
+
+    # --- Delivery method breakdown ---
+    delivery = (
+        current_active
+        .with_columns(pl.col('Delivery Method').fill_null('On Campus'))
+        .group_by('Delivery Method')
+        .agg(pl.col('Enrolled').sum().alias('enrollment'))
+        .sort('enrollment', descending=True)
+    )
+
+    # --- LASC area distribution (top 12 by enrollment) ---
+    lasc = (
+        current_active
+        .filter(pl.col('LASC/WI').is_not_null())
+        .group_by('LASC/WI')
+        .agg(pl.col('Enrolled').sum().alias('enrollment'))
+        .sort('enrollment', descending=True)
+        .head(12)
+    )
+
+    college_rows = by_college.to_dicts()
+    top_rows = top_courses.to_dicts()
+
+    # --- SCH by college (current term) ---
+    sch_college = (
+        current_active
+        .with_columns(pl.col('College').fill_null('NONE'))
+        .group_by('College')
+        .agg(pl.col('_sch').sum().alias('sch'))
+        .sort('sch', descending=True)
+    ) if not current_active.is_empty() else pl.DataFrame({'College': [], 'sch': []})
+    sch_college_rows = sch_college.to_dicts()
+
+    # --- Sections by credit count (current term) ---
+    credits_dist = (
+        current_active
+        .with_columns(filled_credits(current_active['Credits']).alias('IntCrd'))
+        .group_by('IntCrd')
+        .agg(pl.len().alias('sections'))
+        .sort('IntCrd')
+    ) if not current_active.is_empty() else pl.DataFrame({'IntCrd': [], 'sections': []})
+    credits_rows = credits_dist.to_dicts()
+
+    # --- Cancelled sections by college (current term) ---
+    cancelled_curr = current.filter(pl.col('Status') == 'Cancelled')
+    if not cancelled_curr.is_empty():
+        canc_by_college = (
+            cancelled_curr
+            .with_columns(pl.col('College').fill_null('NONE'))
+            .group_by('College')
+            .agg(pl.len().alias('cancelled'))
+            .sort('cancelled', descending=True)
+        )
+        canc_rows = canc_by_college.to_dicts()
+    else:
+        canc_rows = []
+
+    return {
+        'current_term_name': current_term_name,
+        'current_term_code': current_term,
+        'summary': {
+            'total_sections': total_sections,
+            'active_sections': active_sections,
+            'total_enrolled': total_enrolled,
+            'sch': total_sch,
+            'seat_fill_pct': seat_fill_pct,
+            'seats_available': int(seats['available']),
+        },
+        'enrollment_by_term': {
+            'labels': by_term['Term'].to_list(),
+            'enrollment': [int(x) for x in by_term['enrollment'].to_list()],
+            'sch': [int(x) for x in by_term['sch'].to_list()],
+            'cancelled': [int(x) for x in by_term['cancelled'].to_list()],
+        },
+        'college_breakdown': {
+            'labels': [COLLEGE_LABELS.get(r['College'], r['College']) for r in college_rows],
+            'enrollment': [int(r['enrollment']) for r in college_rows],
+            'capacity': [int(r['capacity']) for r in college_rows],
+        },
+        'top_courses': {
+            'labels': [r['Subj'] + ' ' + r['#'] for r in top_rows],
+            'titles': [r['Title'] for r in top_rows],
+            'enrollment': [int(r['enrollment']) for r in top_rows],
+        },
+        'delivery_breakdown': {
+            'labels': delivery['Delivery Method'].to_list(),
+            'enrollment': [int(x) for x in delivery['enrollment'].to_list()],
+        },
+        'lasc_breakdown': {
+            'labels': lasc['LASC/WI'].to_list(),
+            'enrollment': [int(x) for x in lasc['enrollment'].to_list()],
+        },
+        'sch_by_college': {
+            'labels': [COLLEGE_LABELS.get(r['College'], r['College']) for r in sch_college_rows],
+            'sch': [int(r['sch']) for r in sch_college_rows],
+        },
+        'credits_distribution': {
+            'labels': [str(r['IntCrd']) + ' cr.' for r in credits_rows],
+            'sections': [int(r['sections']) for r in credits_rows],
+        },
+        'cancelled_by_college': {
+            'labels': [COLLEGE_LABELS.get(r['College'], r['College']) for r in canc_rows],
+            'cancelled': [int(r['cancelled']) for r in canc_rows],
+        },
+    }

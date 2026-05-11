@@ -1,0 +1,383 @@
+{% extends "base.html" %}
+
+{% block title %}MSUM Course Analytics - {{ current_term_name }}{% endblock %}
+
+{% block content %}
+<div class="page-container">
+
+
+
+    <!-- ── CHART: Enrollment History (all terms) ─────────────────────── -->
+    <div class="chart-card mb-4">
+        <h3>Enrollment History — All Terms</h3>
+        <div class="chart-container--tall">
+            <canvas id="enrollmentTrendChart"></canvas>
+        </div>
+    </div>
+
+    <!-- ── CHART: Student Credit Hours Trend (all terms) ─────────────────────── -->
+    <div class="chart-card mb-4">
+        <h3>Student Credit Hours — All Terms</h3>
+        <div class="chart-container--tall">
+            <canvas id="schTrendChart"></canvas>
+        </div>
+    </div>
+
+    <!-- ── CHART: Cancelled Sections Trend (all terms) ─────────────────────── -->
+    <div class="chart-card mb-4">
+        <h3>Cancelled Sections — All Terms</h3>
+        <div class="chart-container--tall">
+            <canvas id="cancelledTrendChart"></canvas>
+        </div>
+    </div>
+
+    <div class="section-separator">Term-Specific Data</div>
+
+        <h2 class="mt-2 mb-4">Course Analytics: <strong>{{ current_term_name }}</strong></h2>
+
+    <div class="stats-grid mb-5">
+        <div class="stat-card">
+            <span class="stat-label">Students Enrolled</span>
+            <span class="stat-value">{{ "{:,}".format(summary.total_enrolled) }}</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Student Credit Hours</span>
+            <span class="stat-value">{{ "{:,}".format(summary.sch) }}</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Active Sections</span>
+            <span class="stat-value">{{ summary.active_sections }}</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Seat Fill Rate</span>
+            <span class="stat-value">{{ summary.seat_fill_pct }}%</span>
+        </div>
+    </div>
+
+    <div class="analytics-term-header">
+        <form method="get" action="{{ url_for('analytics') }}" class="term-selector-form">
+            <span class="term-selector-label">Term:</span>
+            <select id="termSelect" name="term" class="field-input term-selector-input" onchange="this.form.submit()">
+                {% for code, name in semesters %}
+                <option value="{{ code }}" {% if code == current_term_code %}selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+            </select>
+        </form>
+        <a href="{{ url_for('index') }}" class="button button-secondary button--sm">Back to Search</a>
+    </div>
+
+    <div class="chart-row chart-row--714 mb-4">
+        <div class="chart-card">
+            <h3>Enrollment by College — {{ current_term_name }}</h3>
+            <div class="chart-container">
+                <canvas id="collegeChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <h3>Delivery Mode — {{ current_term_name }}</h3>
+            <div class="chart-container">
+                <canvas id="deliveryChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="chart-row chart-row--714 mb-4">
+        <div class="chart-card">
+            <h3>Top 10 Courses by Enrollment — {{ current_term_name }}</h3>
+            <div class="chart-container--tall">
+                <canvas id="topCoursesChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <h3>Seat Utilization by College — {{ current_term_name }}</h3>
+            <div class="chart-container--tall">
+                <canvas id="seatUtilChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ── CHART: Student Credit Hours by College (current term) ───────────── -->
+    <div class="chart-card mb-4">
+        <h3>Student Credit Hours by College — {{ current_term_name }}</h3>
+        <div class="chart-container">
+            <canvas id="schByCollegeChart"></canvas>
+        </div>
+    </div>
+
+    <!-- ── CHART: Sections by Credit Load (current term) ───────────────────── -->
+    <div class="chart-card mb-4">
+        <h3>Sections by Credit Load — {{ current_term_name }}</h3>
+        <div class="chart-container">
+            <canvas id="creditsDistChart"></canvas>
+        </div>
+    </div>
+
+    <!-- ── CHART: Cancelled Sections by College (current term) ─────────────── -->
+    <div class="chart-card mb-4">
+        <h3>Cancelled Sections by College — {{ current_term_name }}</h3>
+        <div class="chart-container">
+            <canvas id="cancelledByCollegeChart"></canvas>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+    const D = {{ analytics_data | tojson }};
+
+    const MSUM_RED  = '#c8102e';
+    const MSUM_GOLD = '#e8b800';
+    const PALETTE = [
+        '#c8102e', '#2196F3', '#4CAF50', '#FF9800', '#9C27B0',
+        '#009688', '#795548', '#607D8B', '#E91E63', '#00BCD4',
+        '#8BC34A', '#FF5722'
+    ];
+
+    const baseLineOpts = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { ticks: { maxRotation: 45, minRotation: 30, font: { size: 10 } } },
+            y: { beginAtZero: false, ticks: { font: { size: 11 } } }
+        }
+    };
+
+    new Chart(document.getElementById('enrollmentTrendChart'), {
+        type: 'line',
+        data: {
+            labels: D.enrollment_by_term.labels,
+            datasets: [{
+                label: 'Total Enrolled',
+                data: D.enrollment_by_term.enrollment,
+                borderColor: MSUM_RED,
+                backgroundColor: 'rgba(200,16,46,0.08)',
+                fill: true,
+                tension: 0.25,
+                pointRadius: 3,
+                pointHoverRadius: 5,
+            }]
+        },
+        options: baseLineOpts
+    });
+
+    new Chart(document.getElementById('schTrendChart'), {
+        type: 'line',
+        data: {
+            labels: D.enrollment_by_term.labels,
+            datasets: [{
+                label: 'Student Credit Hours',
+                data: D.enrollment_by_term.sch,
+                borderColor: '#2196F3',
+                backgroundColor: 'rgba(33,150,243,0.08)',
+                fill: true,
+                tension: 0.25,
+                pointRadius: 3,
+                pointHoverRadius: 5,
+            }]
+        },
+        options: baseLineOpts
+    });
+
+    new Chart(document.getElementById('collegeChart'), {
+        type: 'bar',
+        data: {
+            labels: D.college_breakdown.labels,
+            datasets: [{
+                label: 'Enrolled',
+                data: D.college_breakdown.enrollment,
+                backgroundColor: PALETTE,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { beginAtZero: true },
+                y: { ticks: { font: { size: 11 } } }
+            }
+        }
+    });
+
+    new Chart(document.getElementById('deliveryChart'), {
+        type: 'doughnut',
+        data: {
+            labels: D.delivery_breakdown.labels,
+            datasets: [{
+                data: D.delivery_breakdown.enrollment,
+                backgroundColor: PALETTE,
+                hoverOffset: 6,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 14 } }
+            }
+        }
+    });
+
+    new Chart(document.getElementById('topCoursesChart'), {
+        type: 'bar',
+        data: {
+            labels: D.top_courses.labels,
+            datasets: [{
+                label: 'Enrolled',
+                data: D.top_courses.enrollment,
+                backgroundColor: MSUM_RED,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            const title = D.top_courses.titles[ctx.dataIndex] || '';
+                            return [' ' + ctx.formattedValue + ' enrolled', ' ' + title];
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: { beginAtZero: true },
+                y: { ticks: { font: { size: 11 } } }
+            }
+        }
+    });
+
+    new Chart(document.getElementById('seatUtilChart'), {
+        type: 'bar',
+        data: {
+            labels: D.college_breakdown.labels,
+            datasets: [
+                {
+                    label: 'Enrolled',
+                    data: D.college_breakdown.enrollment,
+                    backgroundColor: MSUM_RED,
+                },
+                {
+                    label: 'Capacity',
+                    data: D.college_breakdown.capacity,
+                    backgroundColor: 'rgba(200,16,46,0.2)',
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 14 } }
+            },
+            scales: {
+                x: { ticks: { font: { size: 10 }, maxRotation: 30 } },
+                y: { beginAtZero: true }
+            }
+        }
+    });
+
+    // ── CHART: Cancelled Sections Trend (all terms) ──────────────────────────
+    new Chart(document.getElementById('cancelledTrendChart'), {
+        type: 'bar',
+        data: {
+            labels: D.enrollment_by_term.labels,
+            datasets: [{
+                label: 'Cancelled Sections',
+                data: D.enrollment_by_term.cancelled,
+                backgroundColor: 'rgba(200,16,46,0.7)',
+                borderColor: MSUM_RED,
+                borderWidth: 1,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { maxRotation: 45, minRotation: 30, font: { size: 10 } } },
+                y: { beginAtZero: true, ticks: { font: { size: 11 } } }
+            }
+        }
+    });
+
+    // ── CHART: Student Credit Hours by College (current term) ────────────────
+    new Chart(document.getElementById('schByCollegeChart'), {
+        type: 'bar',
+        data: {
+            labels: D.sch_by_college.labels,
+            datasets: [{
+                label: 'SCH',
+                data: D.sch_by_college.sch,
+                backgroundColor: PALETTE,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { beginAtZero: true },
+                y: { ticks: { font: { size: 11 } } }
+            }
+        }
+    });
+
+    // ── CHART: Sections by Credit Load (current term) ────────────────────────
+    new Chart(document.getElementById('creditsDistChart'), {
+        type: 'bar',
+        data: {
+            labels: D.credits_distribution.labels,
+            datasets: [{
+                label: 'Sections',
+                data: D.credits_distribution.sections,
+                backgroundColor: MSUM_GOLD,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { font: { size: 11 } } },
+                y: { beginAtZero: true, ticks: { font: { size: 11 } } }
+            }
+        }
+    });
+
+    // ── CHART: Cancelled Sections by College (current term) ──────────────────
+    new Chart(document.getElementById('cancelledByCollegeChart'), {
+        type: 'bar',
+        data: {
+            labels: D.cancelled_by_college.labels,
+            datasets: [{
+                label: 'Cancelled',
+                data: D.cancelled_by_college.cancelled,
+                backgroundColor: 'rgba(200,16,46,0.6)',
+                borderColor: MSUM_RED,
+                borderWidth: 1,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { font: { size: 10 }, maxRotation: 30 } },
+                y: { beginAtZero: true, ticks: { font: { size: 11 } } }
+            }
+        }
+    });
+
+</script>
+{% endblock %}

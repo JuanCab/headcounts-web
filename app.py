@@ -128,5 +128,39 @@ def download(filename):
     return send_from_directory(CACHE_DIR, filename)
 
 
+@app.route("/analytics")
+def analytics():
+    """Render the analytics/overview dashboard page."""
+    table = pl.read_parquet(PARQUET_DATA)
+    # Allow term selection via ?term=XXXXX; fall back to default
+    try:
+        selected_term = int(request.args.get('term', DEFAULT_TERM[0]))
+    except (ValueError, TypeError):
+        selected_term = DEFAULT_TERM[0]
+    data = get_analytics_data(table, selected_term)
+    return render_template(
+        'analytics.html',
+        analytics_data=data,
+        summary=data['summary'],
+        current_term_name=data['current_term_name'],
+        current_term_code=data['current_term_code'],
+        semesters=SEMESTERS_LIST,
+    )
+
+
+@app.route("/api/<subject>")
+@app.route("/api/<subject>/<spec1>")
+@app.route("/api/<subject>/<spec1>/<spec2>")
+def api_view(subject, spec1=None, spec2=None):
+    """
+    Return filtered enrollment data as JSON.
+    Accepts the same URL parameters as the main filtered_view.
+    """
+    table = pl.read_parquet(PARQUET_DATA).lazy()
+    filtered_table, _ = filter_data(table, subject, spec1, spec2)
+    result = filtered_table.collect()
+    return Response(result.write_json(), mimetype='application/json')
+
+
 if __name__ == "__main__":
     app.run(debug=True)

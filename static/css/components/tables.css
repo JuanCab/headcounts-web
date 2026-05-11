@@ -96,7 +96,7 @@ table.dataTable thead td {
     padding: var(--space-3) !important;
     white-space: nowrap;
     position: sticky;
-    top: 0;
+    top: calc(-1 * var(--space-3));
     z-index: 1;
 }
 

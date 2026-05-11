@@ -2,167 +2,153 @@
 
 {% block title %}Minnesota State University Moorhead Course Headcounts{% endblock %}
 
-{% block head %}
-{{ super() }}
-{% endblock %}
-
 {% block content %}
-<div class="content-wrapper">
+<div class="page-container">
+
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-            <div class="row justify-content-center mb-4">
-                <div class="col-lg-8">
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show animate-fade-in" role="alert">
-                            <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'error' %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    {% endfor %}
+            {% for category, message in messages %}
+                <div class="notice notice-{{ 'error' if category == 'error' else category }} mt-4" role="alert">
+                    <span>
+                        <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'error' %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+                        {{ message }}
+                    </span>
+                    <button class="notice-dismiss" data-dismiss="notice" aria-label="Close">&times;</button>
                 </div>
-            </div>
+            {% endfor %}
         {% endif %}
     {% endwith %}
 
-    <div class="row justify-content-center">
-        <div class="col-12 col-xl-10">
-            <div class="search-card animate-fade-in">
-                <div class="card-header-custom">
-                    <h2><i class="fas fa-search me-3"></i>MSUM Academic Section Headcounts (ASH) Table Builder</h2>
-                </div>
-                <div class="form-container">
-                    <!-- Header Note -->
-                    <div class="alert alert-warning mb-4" role="alert" style="font-size:1.08rem;">
-                        <i class="fas fa-info-circle me-2"></i>
-                        This form helps with building webpages providing MSUM course headcounts. Prefer direct URL navigation? Scroll down for advanced instructions on crafting custom URLs.
+    <div class="hero-card mt-6">
+        <div class="card">
+
+            <h2><i class="fas fa-search"></i> MSUM Academic Section Headcounts (ASH) Table Builder</h2>
+
+            <div class="notice notice-info mt-4">
+                <span>
+                    <i class="fas fa-info-circle"></i>
+                    This form helps build webpages showing MSUM course headcounts.
+                    Prefer direct URL navigation? See the advanced guide below.
+                </span>
+            </div>
+
+            <form action="{{ url_for('index') }}" method="POST" id="courseSearchForm">
+                {{ form.hidden_tag() }}
+
+                <div class="form-panel mt-4">
+
+                    <p class="form-section-heading">Primary Search Criteria</p>
+
+                    <div class="form-fields-row" id="primaryRow">
+                        <div class="form-field-group" id="subjectContainer">
+                            <label class="field-label" for="subject_or_college">{{ form.subject_or_college.label.text }}</label>
+                            {{ form.subject_or_college(class="field-input" + (" is-invalid" if form.subject_or_college.errors else ""), id="subject_or_college") }}
+                            {% if form.subject_or_college.errors %}
+                                {% for error in form.subject_or_college.errors %}
+                                    <span class="invalid-feedback"><i class="fas fa-exclamation-circle"></i> {{ error }}</span>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="form-field-group form-field-group--narrow" id="classCodeContainer">
+                            <label class="field-label" for="class_code">{{ form.class_code.label.text }}</label>
+                            {{ form.class_code(class="field-input" + (" is-invalid" if form.class_code.errors else ""), id="class_code") }}
+                            <span class="field-help wildcard-note">
+                                <i class="fas fa-info-circle"></i> Use _ as wildcard (e.g., 241_ for all 241x courses)
+                            </span>
+                            {% if form.class_code.errors %}
+                                {% for error in form.class_code.errors %}
+                                    <span class="invalid-feedback"><i class="fas fa-exclamation-circle"></i> {{ error }}</span>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="form-field-group" id="courseTypeContainer">
+                            <label class="field-label" for="course_type">{{ form.course_type.label.text }}</label>
+                            {{ form.course_type(class="field-input" + (" is-invalid" if form.course_type.errors else ""), id="course_type") }}
+                            {% if form.course_type.errors %}
+                                {% for error in form.course_type.errors %}
+                                    <span class="invalid-feedback"><i class="fas fa-exclamation-circle"></i> {{ error }}</span>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
                     </div>
-                    <form action="{{ url_for('index') }}" method="POST" id="courseSearchForm">
-                        {{ form.hidden_tag() }}
 
-                        <!-- Primary Search Criteria -->
-                        <div class="form-section">
-                            <h4><i class="fas fa-university"></i>Primary Search Criteria</h4>
-                            <div class="row g-4">
-                                <div class="col-md-4" id="subjectContainer">
-                                    {{ form.subject_or_college.label(class="form-label") }}
-                                    {{ form.subject_or_college(class="form-select" + (" is-invalid" if form.subject_or_college.errors else "")) }}
-                                    {% if form.subject_or_college.errors %}
-                                        <div class="invalid-feedback">
-                                            {% for error in form.subject_or_college.errors %}
-                                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                                <div class="col-md-3" id="classCodeContainer">
-                                    {{ form.class_code.label(class="form-label") }}
-                                    {{ form.class_code(class="form-control" + (" is-invalid" if form.class_code.errors else "")) }}
-                                    <small class="text-muted wildcard-note">
-                                        <i class="fas fa-info-circle me-1"></i>Use _ as wildcard (e.g., 241_ for all courses starting with 241)
-                                    </small>
-                                    {% if form.class_code.errors %}
-                                        <div class="invalid-feedback">
-                                            {% for error in form.class_code.errors %}
-                                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                                <div class="col-md-5" id="courseTypeContainer">
-                                    {{ form.course_type.label(class="form-label") }}
-                                    {{ form.course_type(class="form-select" + (" is-invalid" if form.course_type.errors else "")) }}
-                                    {% if form.course_type.errors %}
-                                        <div class="invalid-feedback">
-                                            {% for error in form.course_type.errors %}
-                                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
 
-                        <!-- Term Section -->
-                        <div class="form-section">
-                            <h4><i class="fas fa-calendar-alt"></i>Term</h4>
-                            <div class="row g-4">
-                                <div class="col-md-12">
-                                    {{ form.term.label(class="form-label") }}
-                                    {{ form.term(class="form-select" + (" is-invalid" if form.term.errors else "")) }}
-                                    {% if form.term.errors %}
-                                        <div class="invalid-feedback">
-                                            {% for error in form.term.errors %}
-                                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="mt-3">
-                                <div class="alert alert-info" role="alert">
-                                    <i class="fas fa-info-circle me-2"></i>
-                                    <strong>Note:</strong> Select a specific term or "All Terms" to include all available semesters. The default is the upcoming semester (currently {{ default_term[1] }}).
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Submit Buttons -->
-                        <div class="text-center mt-4">
-                            <button type="submit" class="btn btn-search">
-                                <i class="fas fa-search me-2"></i>Search Courses
-                            </button>
-                            <button type="button" class="btn btn-reset" id="resetBtn">
-                                <i class="fas fa-undo me-2"></i>Reset
-                            </button>
-                        </div>
-                    </form>
-                </div>
-                <!-- Advanced Instructions Section -->
-                <hr class="mb-5">
-                <div class="form-section advanced-instructions" style="background:#f8f9fa; border-left:4px solid #a6192e;">
-                    <h3 class="mb-3"><i class="fas fa-compass me-2"></i>Advanced URL Navigation Guide</h3>
-                    <p class="mb-2"><strong>All navigation can also be done by editing your browser's URL directly.</strong></p>
-                    <div class="alert alert-secondary mb-4" style="font-size:1rem;">
-                        <strong>Key Rules:</strong>
-                        <ul class="mb-0">
-                            <li>The first thing after the site name is one of the items below. If that is the only thing you specify you will see data for the upcoming semester (currently {{ default_term[1] }}):</li>
-                            <ul>
-                                <li>a subject (e.g. <code>phys</code> or <code>econ</code>, upper or lower case is fine) -- show courses in that subject (if <code>any</code> is used, matches a course number across all subjects)</li>
-                                <li>a college code (allowed codes are <code>cbac</code>, <code>coah</code>, <code>cshe</code>, <code>cehs</code>, or <code>none</code>)</li>
-                                <li>a course type (one of the following):
-                                    <ul>
-                                        <li><code>all</code> -- all courses</li>
-                                        <li><code>lasc</code> -- LASC courses</li>
-                                        <li><code>wi</code> -- writing intensive courses</li>
-                                        <li><code>18online</code> -- 18-Online courses</li>
-                                    </ul>
-                                </li>
-                            </ul>
-                            <li>You can narrow the results by adding any of these as the next part of the URL (you can add up to two of the following):</li>
-                            <ul>
-                                <li>a course number -- if you have selected a subject, this will a specific course number in that subject for all terms (if the course number ends with an underscore, it will match all courses starting with the digits before the underscore)</li>
-                                <li>an LASC area -- if you selected a <code>lasc</code> course type, show only courses in that area for all years</li>
-                                <li>a "year term" code -- show all courses for specific year/term (use <code>all</code> to return all terms when not the default behavior, such as when searching a subject)</li>
-                            </ul>
-                        </ul>
+                    <div class="field-group">
+                        <label class="field-label" for="term">{{ form.term.label.text }}</label>
+                        {{ form.term(class="field-input" + (" is-invalid" if form.term.errors else ""), id="term") }}
+                        {% if form.term.errors %}
+                            {% for error in form.term.errors %}
+                                <span class="invalid-feedback"><i class="fas fa-exclamation-circle"></i> {{ error }}</span>
+                            {% endfor %}
+                        {% endif %}
                     </div>
-                    <h4 class="mt-4 mb-2">Examples&nbsp;<span style="font-size:0.95em; font-weight:400;">(matching is case-insensitive):</span></h4>
-                    <ul>
-                        <li><b>Current/upcoming Math courses:</b>  <a href="{{ url_for('index', _external=True) }}math">{{ url_for('index', _external=True) }}math</a></li>
-                        <li><b>Current/upcoming courses in College of Business, Analytics, and Communication:</b>  <a href="{{ url_for('index', _external=True) }}cbac">{{ url_for('index', _external=True) }}cbac</a></li>
-                        <li><b>Current/upcoming writing-intensive courses:</b> <a href="{{ url_for('index', _external=True) }}wi">{{ url_for('index', _external=True) }}wi</a></li>
-                        <li><b>Math 261:</b> <a href="{{ url_for('index', _external=True) }}math/261">{{ url_for('index', _external=True) }}math/261</a></li>
-                        <li><b>Math 261, Fall 2014 only:</b> <a href="{{ url_for('index', _external=True) }}math/261/20153">{{ url_for('index', _external=True) }}math/261/20153</a></li>
-                        <li><b>CSIS 349L, Fall 2024 only:</b> <a href="{{ url_for('index', _external=True) }}csis/349l/20253">{{ url_for('index', _external=True) }}csis/349l/20253</a></li>
-                        <li><b>MUS 156 (any variant), Fall 2024 only:</b> <a href="{{ url_for('index', _external=True) }}mus/156_/20253">{{ url_for('index', _external=True) }}mus/156_/20253</a> (an underscore '_' matches any variant of MUS 156)</li>
-                        <li><b>Art courses, Fall 2014:</b> <a href="{{ url_for('index', _external=True) }}art/20153">{{ url_for('index', _external=True) }}art/20153</a></li>
-                        <li><b>LASC area 2 courses, Spring 2016:</b> <a href="{{ url_for('index', _external=True) }}lasc/2/20165">{{ url_for('index', _external=True) }}lasc/2/20165</a></li>
-                        <li><b>Everything...all courses, all years:</b> <a href="{{ url_for('index', _external=True) }}all">{{ url_for('index', _external=True) }}all</a></li>
+
+                    <div class="notice notice-info mt-3">
+                        <span>
+                            <i class="fas fa-info-circle"></i>
+                            Select a specific term or "All Terms" to include all available semesters.
+                            The default is the upcoming semester (currently <strong>{{ default_term[1] }}</strong>).
+                        </span>
+                    </div>
+
+                    <div class="form-actions mt-5">
+                        <button type="submit" class="button button-primary">
+                            <i class="fas fa-search"></i> Search Courses
+                        </button>
+                        <button type="button" class="button button-secondary" id="resetBtn">
+                            <i class="fas fa-undo"></i> Reset
+                        </button>
+                    </div>
+
+                </div>
+            </form>
+
+            <hr class="mt-6 mb-5">
+
+            <div class="card-muted mt-4">
+                <h3><i class="fas fa-compass"></i> Advanced URL Navigation Guide</h3>
+                <p class="page-subtext mt-2">All navigation can also be done by editing your browser's URL directly.</p>
+
+                <div class="card-muted mt-3">
+                    <p><strong>Key Rules:</strong></p>
+                    <ul class="mt-2">
+                        <li>The first part of the URL after the site name is one of:
+                            <ul>
+                                <li>a subject (e.g. <code>phys</code> or <code>econ</code>) &mdash; shows courses in that subject (<code>any</code> matches a course number across all subjects)</li>
+                                <li>a college code: <code>cbac</code>, <code>coah</code>, <code>cshe</code>, <code>cehs</code>, or <code>none</code></li>
+                                <li>a course type: <code>all</code>, <code>lasc</code>, <code>wi</code>, or <code>18online</code></li>
+                            </ul>
+                        </li>
+                        <li>Narrow results by adding (up to two) of:
+                            <ul>
+                                <li>a course number (append <code>_</code> for wildcard, e.g., <code>241_</code>)</li>
+                                <li>an LASC area number (if you selected <code>lasc</code>)</li>
+                                <li>a year-term code (use <code>all</code> to return all terms)</li>
+                            </ul>
+                        </li>
                     </ul>
                 </div>
+
+                <h4 class="mt-4"><i class="fas fa-link"></i> Examples</h4>
+                <ul class="mt-2">
+                    <li><strong>Current Math courses:</strong> <a href="{{ url_for('index', _external=True) }}math">{{ url_for('index', _external=True) }}math</a></li>
+                    <li><strong>College of Business courses:</strong> <a href="{{ url_for('index', _external=True) }}cbac">{{ url_for('index', _external=True) }}cbac</a></li>
+                    <li><strong>Writing-intensive courses:</strong> <a href="{{ url_for('index', _external=True) }}wi">{{ url_for('index', _external=True) }}wi</a></li>
+                    <li><strong>Math 261:</strong> <a href="{{ url_for('index', _external=True) }}math/261">{{ url_for('index', _external=True) }}math/261</a></li>
+                    <li><strong>Math 261, Fall 2014:</strong> <a href="{{ url_for('index', _external=True) }}math/261/20153">{{ url_for('index', _external=True) }}math/261/20153</a></li>
+                    <li><strong>CSIS 349L, Fall 2024:</strong> <a href="{{ url_for('index', _external=True) }}csis/349l/20253">{{ url_for('index', _external=True) }}csis/349l/20253</a></li>
+                    <li><strong>MUS 156 (any variant), Fall 2024:</strong> <a href="{{ url_for('index', _external=True) }}mus/156_/20253">{{ url_for('index', _external=True) }}mus/156_/20253</a></li>
+                    <li><strong>Art courses, Fall 2014:</strong> <a href="{{ url_for('index', _external=True) }}art/20153">{{ url_for('index', _external=True) }}art/20153</a></li>
+                    <li><strong>LASC area 2, Spring 2016:</strong> <a href="{{ url_for('index', _external=True) }}lasc/2/20165">{{ url_for('index', _external=True) }}lasc/2/20165</a></li>
+                    <li><strong>All courses, all years:</strong> <a href="{{ url_for('index', _external=True) }}all">{{ url_for('index', _external=True) }}all</a></li>
+                </ul>
             </div>
+
         </div>
     </div>
+
 </div>
 {% endblock %}
 

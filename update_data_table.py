@@ -59,6 +59,15 @@ def add_index_col(df):
 
 
 def main(new_data_file):
+    maintenance_flag = Path('.maintenance')
+    maintenance_flag.touch()
+    try:
+        return _run_update(new_data_file)
+    finally:
+        maintenance_flag.unlink(missing_ok=True)
+
+
+def _run_update(new_data_file):
     # Load the original data
     current_df = pl.read_csv(CSV_DATA)
     print(f"Loaded {len(current_df)} entries of current data.")

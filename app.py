@@ -28,6 +28,8 @@ from utils import (
     get_secret_key,
 )
 
+MAINTENANCE_FILE = Path('.maintenance')
+
 app = Flask(__name__, static_folder="static", template_folder="templates")
 
 
@@ -41,6 +43,18 @@ app.url_map.strict_slashes = False
 # non-error messages
 app.logger.addHandler(logging.StreamHandler(sys.stdout))
 app.logger.setLevel(logging.ERROR)
+
+
+@app.before_request
+def check_site_status():
+    """Block all non-static requests during data updates or when data is missing."""
+    if request.path.startswith('/static'):
+        return
+    if MAINTENANCE_FILE.exists():
+        return render_template('maintenance.html'), 503
+    if not Path(PARQUET_DATA).exists() and request.endpoint not in ('index', None):
+        return render_template('maintenance.html',
+                               message="Data file is missing. Please run the data update script."), 503
 
 
 @app.context_processor

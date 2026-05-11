@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Site Maintenance - MSUM Course Headcounts{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="error-page">
+        <i class="fas fa-tools fa-3x text-muted"></i>
+        <h2>Data Update in Progress</h2>
+        <p>
+            {% if message %}
+                {{ message }}
+            {% else %}
+                Course enrollment data is being refreshed. This usually takes just a few minutes.
+            {% endif %}
+        </p>
+        <p class="text-muted">Please check back shortly.</p>
+        <a href="{{ url_for('index') }}" class="button button-secondary mt-4">
+            <i class="fas fa-redo"></i> Try Again
+        </a>
+    </div>
+</div>
+{% endblock %}

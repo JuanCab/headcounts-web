@@ -117,6 +117,24 @@ def filtered_view(subject, spec1=None, spec2=None):
     return process_data_request(render_me, request.path, subj_text)
 
 
+@app.route("/data/<subject>")
+@app.route("/data/<subject>/<spec1>")
+@app.route("/data/<subject>/<spec1>/<spec2>")
+def data_view(subject, spec1=None, spec2=None):
+    """Return processed table data as JSON for DataTables Ajax loading."""
+    import json as _json
+    table = pl.read_parquet(PARQUET_DATA).lazy()
+    filtered_table, _ = filter_data(table, subject, spec1, spec2)
+    render_me = filtered_table.collect()
+    if render_me.is_empty():
+        return Response(_json.dumps({'columns': [], 'data': []}), mimetype='application/json')
+    columns, rows = _build_display_table(render_me)
+    return Response(
+        _json.dumps({'columns': columns, 'data': rows}),
+        mimetype='application/json'
+    )
+
+
 # Define the route for downloading a cached CSV file
 # This route allows users to download a specific file from the cache
 # The filename is passed as a parameter in the URL

@@ -1,0 +1,32 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      # Bind-mount the data files so the scraper running on the host
+      # can update them without rebuilding the container.
+      - ./all_enrollments.parquet:/app/all_enrollments.parquet
+      - ./all_enrollments.csv:/app/all_enrollments.csv
+      # Named volume for download cache so it persists across restarts.
+      - viewed-csvs:/app/viewed-csvs
+      # Bind-mount code so changes take effect without rebuilding.
+      - ./templates:/app/templates:ro
+      - ./app.py:/app/app.py:ro
+      - ./utils.py:/app/utils.py:ro
+    expose:
+      - "8000"
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./static:/app/static:ro
+    depends_on:
+      - app
+
+volumes:
+  viewed-csvs:

@@ -4,6 +4,7 @@
 
 {% block head %}
 <link rel="stylesheet" href="https://cdn.datatables.net/2.3.2/css/dataTables.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.2/css/buttons.dataTables.min.css">
 {% endblock %}
 
 {% block content %}
@@ -58,15 +59,19 @@
         <div class="card-muted mt-4">
             <p>
                 <strong>{{ n_rows }}</strong> total rows.
-                Download the full dataset:
+                Download the full search result:
             </p>
             <div class="flex-row mt-2">
                 <a href="{{ url_for('download', filename=csv_file) }}" class="button button-secondary button--sm">
-                    <i class="fas fa-file-csv"></i> Download CSV
+                    <i class="fas fa-file-csv"></i> CSV
                 </a>
                 <a href="{{ url_for('download', filename=excel_file) }}" class="button button-secondary button--sm">
-                    <i class="fas fa-file-excel"></i> Download Excel
+                    <i class="fas fa-file-excel"></i> Excel
                 </a>
+                <span class="download-divider">or</span>
+                <button id="exportFilteredBtn" class="button button-secondary button--sm" disabled>
+                    <i class="fas fa-filter"></i> Download filtered view (CSV)
+                </button>
             </div>
         </div>
 
@@ -95,11 +100,14 @@
 {% block scripts %}
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/2.3.2/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.2.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.2.2/js/buttons.html5.min.js"></script>
 <script>
     (function () {
         const table = document.getElementById('resultsTable');
         if (!table) return;
-        new DataTable(table, {
+
+        const dt = new DataTable(table, {
             deferRender: true,
             pageLength: 25,
             lengthMenu: [25, 50, 100, 250],
@@ -107,7 +115,34 @@
             language: {
                 info: 'Showing _START_-_END_ of _TOTAL_ rows',
                 infoFiltered: '(filtered from _MAX_ total rows)',
+            },
+            initComplete: function () {
+                const btn = document.getElementById('exportFilteredBtn');
+                if (btn) btn.disabled = false;
             }
+        });
+
+        document.getElementById('exportFilteredBtn').addEventListener('click', function () {
+            const rows = dt.rows({ search: 'applied' }).data();
+            const columns = dt.columns().header().toArray().map(th => th.textContent.trim());
+
+            const escape = v => {
+                const s = v === null || v === undefined ? '' : String(v).replace(/<[^>]*>/g, '').trim();
+                return s.includes(',') || s.includes('"') || s.includes('\n') ? '"' + s.replace(/"/g, '""') + '"' : s;
+            };
+
+            const lines = [columns.map(escape).join(',')];
+            rows.each(function (row) {
+                lines.push(Array.from(row).map(escape).join(','));
+            });
+
+            const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'filtered_results.csv';
+            a.click();
+            URL.revokeObjectURL(url);
         });
     })();
 </script>

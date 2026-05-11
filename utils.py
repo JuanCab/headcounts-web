@@ -3,8 +3,6 @@ from pathlib import Path
 
 from config import CACHE_DIR, COURSE_DETAIL_URL, DEFAULT_TERM
 from flask import render_template
-from great_tables import GT, html, loc, style
-import numpy as np
 import polars as pl
 import os
 
@@ -15,6 +13,7 @@ import os
 # are used by those two functions to do the actual work of filtering
 # the data and calculating various statistics.
 #
+
 
 def filter_data(tbl, subject, spec1=None, spec2=None):
     """
@@ -428,6 +427,51 @@ def generate_datafiles(table, path, subj_text, dir=CACHE_DIR):
     return csv_file, excel_file
 
 
+def _build_display_table(render_me):
+    """
+    Apply all display transformations to a collected Polars DataFrame and
+    return (columns, rows) ready for DataTables — either HTML rendering or
+    JSON serialization.
+    """
+    render_me = render_me.rename({'Fiscal yrtr': 'year_term'})
+
+    money_cols = ['Tuition Resident', 'Tuition Non-Resident',
+                  'Approximate Course Fees', 'Book Cost']
+    render_me = render_me.with_columns([
+        pl.col(col)
+        .map_elements(lambda x: f"${x:,.2f}" if x is not None else None, return_dtype=pl.Utf8)
+        .alias(col)
+        for col in money_cols
+    ])
+
+    render_me = render_me.with_columns(
+        pl.col('Last Updated').dt.strftime(
+            '%Y-%m-%d %H:%M:%S').alias('Last Updated')
+    )
+
+    fmt_string = "<a href='" + COURSE_DETAIL_URL + "'>{course_id}</a>"
+    cleaned_fmt_string = re.sub(r"\{[^}]*\}", "{}", fmt_string)
+
+    render_me = render_me.with_columns([
+        pl.col("ID #").cast(pl.Int64).map_elements(lambda x: f"{x:06}",
+                                                   return_dtype=pl.String).alias("course_id_str")
+    ])
+    render_me = render_me.with_columns(
+        pl.format(cleaned_fmt_string,
+                  pl.col('course_id_str'),
+                  pl.col('year_term'),
+                  pl.col('course_id_str')).alias("ID #")
+    ).drop('course_id_str')
+
+    cols_to_exclude = {'year_term'}
+    display_columns = [
+        c for c in render_me.columns if c not in cols_to_exclude]
+    rows = [
+        list('' if v is None else v for v in row)
+        for row in render_me.select(display_columns).rows()
+    ]
+    return display_columns, rows
+
 
 def process_data_request(render_me, path, subj_text):
     """
@@ -499,89 +543,30 @@ def process_data_request(render_me, path, subj_text):
 
     # Generate the CSV file corresponding to this data using full
     # dataset
-    csv_filename, excel_filename = generate_datafiles(render_me, path, subj_text)
+    csv_filename, excel_filename = generate_datafiles(
+        render_me, path, subj_text)
 
     # Compute various statistics for the table
     stu_credit_hours = calc_sch(render_me)
     seats = calc_seats(render_me)
     calulcated_tuition = calc_tuition(render_me)
 
-    #
-    # Modify the table to be rendered in the template
-    #
+    columns, rows = _build_display_table(render_me)
+    n_rows = len(rows)
 
-    # If the table is larger than max_rows rows, only render the first max_rows
-    # rows to avoid performance issues in the browser.
-    max_rows = 300
-    n_rows = render_me.height
-    if render_me.height > max_rows:
-        render_me = render_me.head(max_rows)
-
-    # Rename the 'Fiscal yrtr' column to 'year_term' for clarity
-    render_me = render_me.rename({'Fiscal yrtr': 'year_term'})
-
-    # Convert all the columns with money values to strings with
-    # dollar signs and commas for thousands.
-    money_cols = [ 'Tuition Resident', 'Tuition Non-Resident',
-                  'Approximate Course Fees', 'Book Cost',]
-    render_me = render_me.with_columns([
-        pl.col(col)
-        .map_elements(lambda x: f"${x:,.2f}" if x is not None else None, return_dtype=pl.Utf8)
-        .alias(col)
-        for col in money_cols
-    ])
-
-    # Convert the 'Last Updated' column to a string representation
-    render_me = render_me.with_columns(
-        pl.col('Last Updated').dt.strftime('%Y-%m-%d %H:%M:%S').alias('Last Updated')
-    )
-
-    # Convert the ID # column to HTML links to the course detail
-    # page, using the COURSE_DETAIL_URL defined in config.py.
-    COURSE_DETAIL_URL = 'https://eservices.minnstate.edu/registration/search/detail.html?campusid=072&courseid={course_id}&yrtr={year_term}&rcid=0072&localrcid=0072&partnered=false&parent=search'
-    fmt_string = "<a href='" + COURSE_DETAIL_URL + "'>{course_id}</a>"
-    cleaned_fmt_string = re.sub(r"\{[^}]*\}", "{}", fmt_string)
-
-    # Create a formatted string version of the course ID
-    render_me_alt = render_me.with_columns([
-        pl.col("ID #").cast(pl.Int64).map_elements(lambda x: f"{x:06}",
-                                                   return_dtype=pl.String).alias("course_id_str")
-        ])
-
-    render_me_alt = render_me_alt.with_columns(
-        pl.format(cleaned_fmt_string,
-                  pl.col('course_id_str'),
-                  pl.col('year_term'),
-                  pl.col('course_id_str')
-        ).alias("ID #")
-    )
-
-    # Remove the 'course_id_str' column as it is no longer needed
-    render_me_alt = render_me_alt.drop('course_id_str')
-
-    # Render table using GreatTables
-    rendered_html = (GT(render_me_alt).tab_header(title=subj_text)
-                     .cols_hide(columns="year_term")
-                     .tab_style( style=style.text(size="14px"), locations=loc.body())
-                     .tab_style( style=style.text(size="14px", weight="bold"), locations=loc.column_labels())
-                     .opt_row_striping()
-                     .as_raw_html()
-    )
-
-    # Render the page using the 'results.html' template,
+    # Render the page using the 'results.html' template.
     return render_template('results.html',
-                           rendered_table=rendered_html,
+                           columns=columns,
+                           rows=rows,
                            subject=subj_text,
                            n_rows=n_rows,
-                           max_rows=max_rows,
                            oldest=oldest,
                            most_recent=most_recent,
                            sch=stu_credit_hours,
                            csv_file=csv_filename,
                            excel_file=excel_filename,
                            seats=seats,
-                           revenue=calulcated_tuition,
-                           base_detail_url=COURSE_DETAIL_URL)
+                           revenue=calulcated_tuition)
 
 
 def get_secret_key():

@@ -1,5 +1,5 @@
 services:
-  app:
+  headcounts:
     build: .
     restart: unless-stopped
     env_file: .env
@@ -16,6 +16,12 @@ services:
       - ./utils.py:/app/utils.py:ro
     expose:
       - "8001"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.headcounts.rule=Host(`headcounts.mooreai.net`)"
+      - "traefik.http.routers.headcounts.entrypoints=web"
+      - "traefik.http.services.headcounts.loadbalancer.server.port=8001"
 
   nginx:
     image: nginx:alpine
@@ -26,7 +32,7 @@ services:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ./static:/app/static:ro
     depends_on:
-      - app
+      - headcounts
 
 volumes:
   viewed-csvs:

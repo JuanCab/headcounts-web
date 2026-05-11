@@ -65,7 +65,7 @@ def filter_data(tbl, subject, spec1=None, spec2=None):
     """
 
     # MSUM Colleges
-    MSUM_COLLEGES = [ 'cbac', 'coah', 'cshe', 'cehs', 'none' ]
+    MSUM_COLLEGES = ['cbac', 'coah', 'cshe', 'cehs', 'none']
 
     # Set the subject description string to the upper case version
     # of the subject, but then make sure to convert the subject
@@ -76,11 +76,11 @@ def filter_data(tbl, subject, spec1=None, spec2=None):
     # Determine the subject category and filter accordingly
     if subject in MSUM_COLLEGES:
         # If the subject is a college code, filter by that college
-        filtered_table = tbl.filter(pl.col('College')== subject.upper())
+        filtered_table = tbl.filter(pl.col('College') == subject.upper())
     elif subject == 'lasc':
         filtered_table = tbl.filter(
             (pl.col("LASC/WI").is_not_null()) & (pl.col("LASC/WI") != "WI")
-            )
+        )
     elif subject == 'wi':
         filtered_table = tbl.filter(pl.col("LASC/WI").str.contains("WI"))
     elif subject == '18online':
@@ -103,8 +103,8 @@ def filter_data(tbl, subject, spec1=None, spec2=None):
     if subject == 'any' and spec1:
         spec1_lower = spec1.lower()
         # Check if spec1 is a course number (not a term, not lasc/wi)
-        if (not (len(spec1_lower) == 5 and spec1_lower[-1] in ['1', '3', '5']) 
-            and spec1_lower not in ['lasc', 'wi']):
+        if (not (len(spec1_lower) == 5 and spec1_lower[-1] in ['1', '3', '5'])
+                and spec1_lower not in ['lasc', 'wi']):
             # spec1 is the course number to search across all subjects
             if spec1_lower[-1] == '_':
                 # Wildcard course number
@@ -148,7 +148,7 @@ def filter_data(tbl, subject, spec1=None, spec2=None):
             if len(spec) == 5 and spec[-1] in ['1', '3', '5']:
                 filtered_table = filtered_table.filter(
                     pl.col('Fiscal yrtr') == int(spec)
-                    )
+                )
             # 2) Handle Course Prefix specifiers
             elif (re.match('[a-z]{2,4}', spec) and spec not in ['lasc', 'wi']):
                 filtered_table = filtered_table.filter(
@@ -156,12 +156,12 @@ def filter_data(tbl, subject, spec1=None, spec2=None):
                 )
                 subj_text = f"{subj_text} {spec}"
             elif subject == 'lasc':
-                    # If the subject is 'lasc', filter by LASC/WI value
-                    # which is expected to be uppercase (eg. 1A)
-                    filtered_table = filtered_table.filter(
-                        pl.col('LASC/WI').str.contains(spec.upper())
-                    )
-                    subj_text = f"{subj_text} {spec.upper()}"
+                # If the subject is 'lasc', filter by LASC/WI value
+                # which is expected to be uppercase (eg. 1A)
+                filtered_table = filtered_table.filter(
+                    pl.col('LASC/WI').str.contains(spec.upper())
+                )
+                subj_text = f"{subj_text} {spec.upper()}"
             else:
                 # Otherwise, filter by course number
 
@@ -174,12 +174,11 @@ def filter_data(tbl, subject, spec1=None, spec2=None):
                         pl.col('#').str.starts_with(numcode.upper())
                     )
                     subj_text = f"{subj_text} {numcode.upper()} (Any Variant)"
-                else: # Exact match of course number/letter
+                else:  # Exact match of course number/letter
                     filtered_table = filtered_table.filter(
                         pl.col('#') == spec.upper()
                     )
                     subj_text = f"{subj_text} {spec.upper()}"
-
 
     # Always sort the output by Fiscal yrtr, Subj, #, and section
     filtered_table = filtered_table.sort(
@@ -391,7 +390,8 @@ def generate_datafiles(table, path, subj_text, dir=CACHE_DIR):
     # Compute the average time for all courses in the dataframe based
     # on the "Last Updated" column and format it as a string
     # representation of the average time in the format YYYYMMDD-HHMMSS.
-    avg_time = table.select(pl.col('Last Updated')).mean().item().strftime("%Y%m%d-%H%M%S")
+    avg_time = table.select(pl.col('Last Updated')
+                            ).mean().item().strftime("%Y%m%d-%H%M%S")
 
     # Fix "Last Updated" column to be a datetime column without the
     # timezone information, so it can be written to the CSV and Excel
@@ -404,7 +404,8 @@ def generate_datafiles(table, path, subj_text, dir=CACHE_DIR):
     )
 
     # Use a sanitized version of subj_text for the filename
-    safe_subj_text = sanitize_excel_sheetname(subj_text).replace(" ", "_").replace("\n", "_")
+    safe_subj_text = sanitize_excel_sheetname(
+        subj_text).replace(" ", "_").replace("\n", "_")
     # Optionally, you can further clean up the string if needed
 
     # Compose the filename
@@ -421,7 +422,8 @@ def generate_datafiles(table, path, subj_text, dir=CACHE_DIR):
     # Define formatting and other information for the Excel file
     excel_file = f"{filename_base}.xlsx"
     excel_path = Path(CACHE_DIR) / excel_file
-    table.write_excel(excel_path, worksheet=sanitize_excel_sheetname(subj_text))
+    table.write_excel(
+        excel_path, worksheet=sanitize_excel_sheetname(subj_text))
 
     # Return the names of the files
     return csv_file, excel_file
@@ -597,7 +599,8 @@ def get_secret_key():
         with open(".flask_secret_key") as f:
             return f.read().strip()
     except FileNotFoundError:
-        raise RuntimeError("SECRET_KEY not set and .flask_secret_key file not found!")
+        raise RuntimeError(
+            "SECRET_KEY not set and .flask_secret_key file not found!")
 
 
 def build_url(form):
@@ -647,7 +650,7 @@ def build_url(form):
         # Add term if specified (always include it for 'any' searches)
         if term:
             parts.append(term)
-        print ("Generated URL parts:", "/" + "/".join(parts))
+        print("Generated URL parts:", "/" + "/".join(parts))
         return "/" + "/".join(parts)
 
     # Add subject_or_college or course_type
@@ -660,7 +663,8 @@ def build_url(form):
     #    subject/college is selected, otherwise include it.
     if term:
         if not (
-            term == upcoming_term and (subject_or_college and subject_or_college != "all")
+            term == upcoming_term and (
+                subject_or_college and subject_or_college != "all")
         ):
             parts.append(term)
 
@@ -672,7 +676,7 @@ def build_url(form):
 
 
 ###
-### Kept for future enhancements
+# Kept for future enhancements
 ###
 def filter_data_advanced(tbl, **filters):
     """
@@ -687,10 +691,12 @@ def filter_data_advanced(tbl, **filters):
     if subj_col:
         subj_col_upper = subj_col.upper()
         if subj_col_upper in ['CBAC', 'COAH', 'CSHE', 'CEHS', 'NONE']:
-            filtered_table = filtered_table.filter(pl.col('College') == subj_col_upper)
+            filtered_table = filtered_table.filter(
+                pl.col('College') == subj_col_upper)
             filter_descriptions.append(f"College: {subj_col_upper}")
         else:
-            filtered_table = filtered_table.filter(pl.col('Subj') == subj_col_upper)
+            filtered_table = filtered_table.filter(
+                pl.col('Subj') == subj_col_upper)
             filter_descriptions.append(f"Subject: {subj_col_upper}")
 
     # Course Type
@@ -704,10 +710,12 @@ def filter_data_advanced(tbl, **filters):
                 filter_descriptions.append("LASC Courses")
             else:
                 lasc_area = course_type.split('/')[-1].upper()
-                filtered_table = filtered_table.filter(pl.col('LASC/WI').str.contains(lasc_area))
+                filtered_table = filtered_table.filter(
+                    pl.col('LASC/WI').str.contains(lasc_area))
                 filter_descriptions.append(f"LASC Area: {lasc_area}")
         elif course_type == 'wi':
-            filtered_table = filtered_table.filter(pl.col("LASC/WI").str.contains("WI"))
+            filtered_table = filtered_table.filter(
+                pl.col("LASC/WI").str.contains("WI"))
             filter_descriptions.append("Writing Intensive (WI)")
         elif course_type == '18':
             filtered_table = filtered_table.filter(pl.col('18online') == True)
@@ -734,7 +742,8 @@ def filter_data_advanced(tbl, **filters):
         elif year != "%" and semester == "_":
             # Full Academic Term, summer-fall-spring
             year_int = int(year)
-            terms = [str(year_int) + "1", str(year_int) + "3", str(year_int) + "5"]
+            terms = [str(year_int) + "1", str(year_int) +
+                     "3", str(year_int) + "5"]
             filtered_table = filtered_table.filter(
                 pl.col('Fiscal yrtr').is_in([int(t) for t in terms])
             )
@@ -745,7 +754,8 @@ def filter_data_advanced(tbl, **filters):
             if semester == "Spring":
                 year_int -= 1
             term_code = str(year_int) + sem_digit
-            filtered_table = filtered_table.filter(pl.col('Fiscal yrtr') == int(term_code))
+            filtered_table = filtered_table.filter(
+                pl.col('Fiscal yrtr') == int(term_code))
         elif year == "%" and semester == "_":
             pass
 
@@ -753,7 +763,8 @@ def filter_data_advanced(tbl, **filters):
         by=['Fiscal yrtr', 'Subj', '#', 'Sec'],
         descending=[False, False, False, False]
     )
-    subj_text = " | ".join(filter_descriptions) if filter_descriptions else "All Courses"
+    subj_text = " | ".join(
+        filter_descriptions) if filter_descriptions else "All Courses"
     return filtered_table, subj_text
 
 

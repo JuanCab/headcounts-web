@@ -28,6 +28,7 @@
 #  the new data for that semester.
 
 import polars as pl
+from pathlib import Path
 from datetime import datetime
 from config import CSV_DATA, PARQUET_DATA, SETUP_DIR, BACKUP_DIR, SEMESTER_PY
 
@@ -86,9 +87,12 @@ def _run_update(new_data_file):
 
     # Determine the current semester from the new data
     if 'year_term' not in new_df.columns:
-        raise ValueError("The new data file must contain a 'year_term' column.")
-    current_semester = new_df.select(pl.col('year_term')).unique().to_series()[0]
-    print(f"Semester for new data identified as year_term = {current_semester}.")
+        raise ValueError(
+            "The new data file must contain a 'year_term' column.")
+    current_semester = new_df.select(
+        pl.col('year_term')).unique().to_series()[0]
+    print(
+        f"Semester for new data identified as year_term = {current_semester}.")
 
     # Add an index column to both dataframes
     new_df = add_index_col(new_df)
@@ -107,14 +111,16 @@ def _run_update(new_data_file):
     )
     num_after = len(current_rows_to_keep)
     num_removed = num_before - num_after
-    print(f"Removing {num_removed} entries from current data for year_term = {current_semester}.")
+    print(
+        f"Removing {num_removed} entries from current data for year_term = {current_semester}.")
 
     # Combine the rows that need to be kept with the updated rows
     result_df = pl.concat([current_rows_to_keep, new_df])
     num_final = len(result_df)
     num_added = num_final - num_after
     print(f"Added {num_added} new entries for year_term = {current_semester}.")
-    print(f"Current data now has {num_final} entries after removing old semester data and adding new data.")
+    print(
+        f"Current data now has {num_final} entries after removing old semester data and adding new data.")
 
     # Remove the (now unnecessary) index column from the result_df
     result_df = result_df.drop('index')
@@ -122,9 +128,9 @@ def _run_update(new_data_file):
     # Check for missing tuition values in the new data and set it to
     # zero if it is an integer type.
     last_cols = ['Tuition -resident',
-                    'Tuition -nonresident',
-                    'Approximate Course Fees',
-                    'Book Cost']
+                 'Tuition -nonresident',
+                 'Approximate Course Fees',
+                 'Book Cost']
     for tuition in last_cols:
         # Check for null values in the tuition column and replace with
         # $0.00
@@ -185,7 +191,8 @@ def _run_update(new_data_file):
     if 'timestamp' in result_df.columns:
         # Convert unix timestamp to datetime (in naive UTC)
         result_df = result_df.with_columns(
-            pl.from_epoch(pl.col('timestamp'), time_unit="s").alias('timestamp')
+            pl.from_epoch(pl.col('timestamp'),
+                          time_unit="s").alias('timestamp')
         )
         # Make sure it is in the central time zone
         result_df = result_df.with_columns(
@@ -198,19 +205,22 @@ def _run_update(new_data_file):
     # temporary columns to hold the year and term code, then merging the
     # two into a single column.
     result_df = result_df.with_columns(
-        pl.col("year_term").cast(str).str.slice(0, 4).cast(pl.Int32).alias("fiscal_year"),
-        pl.col("year_term").cast(str).str.slice(-1).cast(pl.Int32).alias("term_code")
+        pl.col("year_term").cast(str).str.slice(
+            0, 4).cast(pl.Int32).alias("fiscal_year"),
+        pl.col("year_term").cast(
+            str).str.slice(-1).cast(pl.Int32).alias("term_code")
     )
     # If the term code is 5 (Spring), then the year is the fiscal year
     # otherwise it is the fiscal year - 1
     result_df = result_df.with_columns(
         pl.when(pl.col("term_code") == 5).then(pl.col("fiscal_year"))
         .otherwise(pl.col("fiscal_year") - 1).alias("year")
-        )
+    )
     # Create a human-readable term name based on the term code
     term_map = {1: "Summer", 3: "Fall", 5: "Spring"}
     result_df = result_df.with_columns(
-        pl.col("term_code").replace_strict(term_map,default=None).alias("term_name")
+        pl.col("term_code").replace_strict(
+            term_map, default=None).alias("term_name")
     )
     # Finally, create a term name column that combines the term name
     # and year
@@ -221,11 +231,12 @@ def _run_update(new_data_file):
         ).alias("Term")
     )
     # Drop all the temporary columns we created
-    result_df = result_df.drop(["fiscal_year", "term_code", "year", "term_name"])
+    result_df = result_df.drop(
+        ["fiscal_year", "term_code", "year", "term_name"])
 
     # Set the order of the first few columns to be a fixed order
-    first_cols = ['Term', 'year_term', 'ID #', 'Subj', '#', 'Sec', 'Title', 
-                  'Crds', 'Enrolled', 'Size:', 'Status' ]
+    first_cols = ['Term', 'year_term', 'ID #', 'Subj', '#', 'Sec', 'Title',
+                  'Crds', 'Enrolled', 'Size:', 'Status']
     result_df = result_df.select(
         *first_cols,
         *[col for col in result_df.columns if col not in first_cols]
@@ -247,7 +258,7 @@ def _run_update(new_data_file):
     # Make sure the following columns are the last few columns in the
     # dataframe in this order
     last_cols = ['College', 'Tuition unit', 'Tuition -resident', 'Tuition -nonresident',
-                    'Approximate Course Fees', 'Book Cost','timestamp']
+                 'Approximate Course Fees', 'Book Cost', 'timestamp']
     result_df = result_df.select(
         *[col for col in result_df.columns if col not in last_cols],
         *last_cols
@@ -268,15 +279,16 @@ def _run_update(new_data_file):
     result_df.write_parquet(PARQUET_DATA)
     print(f"Updated data saved to {CSV_DATA} and {PARQUET_DATA}")
 
-    # Dump out a list of tuples consisting lf all the unique year_terms 
-    # and the corresponding Semester name into a Python file to be 
+    # Dump out a list of tuples consisting lf all the unique year_terms
+    # and the corresponding Semester name into a Python file to be
     # imported later.  This is the SEMESTER_PY file which defines the
     # SEMESTERS_LIST variable.
     semesters_list = result_df.select(
         pl.col('Fiscal yrtr').cast(str).alias('year_term'),
         pl.col('Term')
     ).unique().sort('year_term', descending=True).to_dicts()
-    print(f"Found {len(semesters_list)} unique semesters to write to {SEMESTER_PY}")
+    print(
+        f"Found {len(semesters_list)} unique semesters to write to {SEMESTER_PY}")
     with open(SEMESTER_PY, 'w') as f:
         f.write("SEMESTERS_LIST = [\n")
         # Make the list of tuples, year_term as integer and Term as string
@@ -299,7 +311,8 @@ if __name__ == '__main__':
     result_df = main(args.new_data)
 
     # Print some feedback
-    print(f"Data updated successfully. {len(result_df)} total rows in the dataset.")
+    print(
+        f"Data updated successfully. {len(result_df)} total rows in the dataset.")
     print("The last 5 rows of the updated dataset:")
     print(result_df.tail())
     print("with columns:")

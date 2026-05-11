@@ -18,7 +18,6 @@ from collections import defaultdict
 import requests
 from bs4 import BeautifulSoup
 import lxml.html
-import numpy as np
 import polars as pl
 
 from config import SCRAPE_DIR
@@ -36,8 +35,10 @@ from config import SCRAPE_DIR
 #
 URL_COMMON_ROOT = 'https://eservices.minnstate.edu/registration/search/'
 URL_ROOT = URL_COMMON_ROOT + 'basic.html?campusid={campus_id:03}'
-SUBJECT_SEARCH_URL = URL_COMMON_ROOT + 'advancedSubmit.html?campusid={campus_id:03}&searchrcid={campus_id:04}&searchcampusid={campus_id:03}&yrtr={year_term}&subject={subject}&courseNumber=&courseId=&openValue=ALL&showAdvanced=&delivery=ALL&starttime=&endtime=&mntransfer=&gened=&credittype=ALL&credits=&instructor=&keyword=&begindate=&site=&resultNumber=250'
-COURSE_DETAIL_URL = URL_COMMON_ROOT + 'detail.html?campusid={campus_id:03}&courseid={course_id}&yrtr={year_term}&rcid={campus_id:04}&localrcid={campus_id:04}&partnered=false&parent=search'
+SUBJECT_SEARCH_URL = URL_COMMON_ROOT + \
+    'advancedSubmit.html?campusid={campus_id:03}&searchrcid={campus_id:04}&searchcampusid={campus_id:03}&yrtr={year_term}&subject={subject}&courseNumber=&courseId=&openValue=ALL&showAdvanced=&delivery=ALL&starttime=&endtime=&mntransfer=&gened=&credittype=ALL&credits=&instructor=&keyword=&begindate=&site=&resultNumber=250'
+COURSE_DETAIL_URL = URL_COMMON_ROOT + \
+    'detail.html?campusid={campus_id:03}&courseid={course_id}&yrtr={year_term}&rcid={campus_id:04}&localrcid={campus_id:04}&partnered=false&parent=search'
 
 # The last size key includes a colon because there was a faculty member
 # at MSUM whose list name was "Sizer" and "Size" without the colon
@@ -51,7 +52,7 @@ SCRAPE_DIR.mkdir(parents=True, exist_ok=True)
 
 # Provide stub for the destination directory name within the data directory.
 # This will be filled in with a timestamp later.
-DESTINATION_DIR_BASE = str( SCRAPE_DIR / 'results_v2' )
+DESTINATION_DIR_BASE = str(SCRAPE_DIR / 'results_v2')
 
 # # Name of symlink to create to most recent scrape
 # LATEST = str( DATA_DIR / 'latest' )
@@ -103,10 +104,10 @@ EXTRA_COLUMNS = [
 ]
 
 DESIRED_ORDER = [
-    "ID #","Subj","#","Sec","Title","Dates","Days","Time","Size:","Enrolled:","Cr/Hr",
-    "Status","Instructor","Delivery Method","Book Cost","Loc","LASC/WI","18online",
-    "Tuition -resident","Tuition unit","Tuition -nonresident","Course level",
-    "Approximate Course Fees","timestamp","year_term"
+    "ID #", "Subj", "#", "Sec", "Title", "Dates", "Days", "Time", "Size:", "Enrolled:", "Cr/Hr",
+    "Status", "Instructor", "Delivery Method", "Book Cost", "Loc", "LASC/WI", "18online",
+    "Tuition -resident", "Tuition unit", "Tuition -nonresident", "Course level",
+    "Approximate Course Fees", "timestamp", "year_term"
 ]
 
 
@@ -615,7 +616,8 @@ if __name__ == '__main__':
         # Replace all empty strings with None, so that they are
         # properly recognized as missing values in polars.
         data_df = data_df.with_columns([
-            pl.when(pl.col(col).cast(pl.Utf8) == '').then(None).otherwise(pl.col(col)).alias(col)
+            pl.when(pl.col(col).cast(pl.Utf8) == '').then(
+                None).otherwise(pl.col(col)).alias(col)
             for col in data_df.columns if data_df.schema[col] == pl.Utf8
         ])
 
@@ -638,9 +640,9 @@ if __name__ == '__main__':
     print(f"Processed {len(source_list) - len(bads)} subjects, "
           f"failed on {len(bads)} subjects. A total of {len(composite_df)} "
           "courses were processed.")
-    
+
     # Write out a file for the overall (i.e. all subjects) table.
-    output_file = Path(destination) /  'all_enrollments.csv'
+    output_file = Path(destination) / 'all_enrollments.csv'
     composite_df.write_csv(output_file)
 
     # Verify that the table wrote out correctly

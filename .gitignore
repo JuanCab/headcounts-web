@@ -7,3 +7,5 @@ old_code
 test_script
 test_ipython.txt
 .flask_secret_key
+.env
+/private

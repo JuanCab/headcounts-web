@@ -1,8 +1,6 @@
 # Headcounts
 
-A simple web app for displaying (reasonably) up-to-date enrollments in courses at [Minnesota State University Moorhead](http://www.mnstate.edu) for the current semester.
-
-**Live demo:** [http://headcounts.herokuapp.com](http://headcounts.herokuapp.com)  
+A Flask web app for browsing course enrollment data at [Minnesota State University Moorhead](http://www.mnstate.edu). Data is scraped from the public MinnState course search tool and served as a searchable, filterable table with download support and an analytics dashboard.
 
 ---
 
@@ -10,44 +8,35 @@ A simple web app for displaying (reasonably) up-to-date enrollments in courses a
 
 - Search and filter courses by subject, college, term, LASC area, writing intensive, and more
 - Responsive, modern UI for desktop and mobile
-- Download results as CSV or Excel files
-- Summary statistics: credit hours, tuition revenue, empty seats, and more
-- Disclaimer: Data is **not real-time**; it is scraped from the [public-facing MinnState-maintained course search tool](https://www.minnstate.edu/courses/).
-- Powered by:
-  - [Flask](http://flask.pocoo.org/) (web framework)
-  - [Bootstrap](https://getbootstrap.com/) (styling)
-  - [Polars](https://pola.rs/) (data processing)
-  - Hosted on [Heroku](https://www.heroku.com/)
+- Download full results as CSV or Excel, or export the current filtered view as CSV
+- Summary statistics: student credit hours, tuition revenue, empty seats, and more
+- Analytics dashboard with historical enrollment trends by term
+- Deployed with Docker (nginx + gunicorn)
+- Data is **not real-time** — scraped from the [public MinnState course search tool](https://www.minnstate.edu/courses/)
+- Powered by [Flask](http://flask.pocoo.org/), [Polars](https://pola.rs/), [DataTables](https://datatables.net/), and [Chart.js](https://www.chartjs.org/)
 
 ---
 
 ## Updating for a New Semester
 
-When data for a new semesters' courses becomes available, the following steps
-are needed to update the app:
+Run the scraper for the new term code, then feed the output to the updater:
 
-1. Edit the `DEFAULT_TERM` variable in `config.py` to be a tuple with the
-    new term code and name (e.g., `('20265', 'Spring 2026')`)
-2. Edit the `SEMESTERS_LIST` list in `config_terms.py` to add a new tuple
-    with the new term code and name (e.g., `('20265', 'Spring 2026')`)
-    to the list.
-3. Edit `daily_update_script.sh` to change the `year_terms` variable to
-    a SPACE-delimited list of terms to scrape.
+```bash
+docker compose exec app python scrape.py --year-term <term-code>
+docker compose exec app python update_data_table.py <path-to-scraped-csv>
+```
+
+`update_data_table.py` will merge the new data into the main dataset and add the term to `config_terms.py` automatically. Afterward, update `DEFAULT_TERM` in `config.py` to point to the new term.
+
+See `Developer-Reference.md` for the full workflow and file-by-file details.
+
 ---
 
 ## Credits
 
 - UI icons: [Font Awesome](https://fontawesome.com/)
 - Fonts: [Google Fonts](https://fonts.google.com/) (Montserrat, Tinos)
-- Original version developed by: [Matthew Craig](https://github.com/mwcraig/)
-- Backend upgraded to use Polars and currently maintained by: [Juan Cabanela](https://web.mnstate.edu/cabanela/)
-- GUI redesign and front-end development: [Natoli Tesgera](https://github.com/Natoli74)  
-
----
-
-
-## Acknowledgments
-
-- Data processed with [Polars](https://pola.rs/)
-- Hosted by [Heroku](https://www.heroku.com/)
-- Thanks to [Kenneth Reitz](https://github.com/kennethreitz/) for the [conda buildpack for Heroku](https://github.com/kennethreitz/conda-buildpack)
+- Original version: [Matthew Craig](https://github.com/mwcraig/)
+- Backend and Polars migration: [Juan Cabanela](https://web.mnstate.edu/cabanela/)
+- Front-end redesign: [Natoli Tesgera](https://github.com/Natoli74)
+- Docker deployment, infrastructure, and data pipeline: [Laween Al-Sulaivany](https://github.com/laween-alsulaivany)

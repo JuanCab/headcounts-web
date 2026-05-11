@@ -22,7 +22,14 @@ services:
       - "traefik.http.routers.headcounts.rule=Host(`headcounts.mooreai.net`)"
       - "traefik.http.routers.headcounts.entrypoints=web"
       - "traefik.http.services.headcounts.loadbalancer.server.port=8001"
+    networks:
+      - proxy
 
+networks:
+  proxy:
+    external: true
+
+    
   nginx:
     image: nginx:alpine
     restart: unless-stopped

@@ -43,32 +43,49 @@
                     {# -- Primary Search Criteria Section -- #}
                     <p class="form-section-heading">Primary Search Criteria</p>
 
-                    <div class="form-fields-row" id="primaryRow">
-                        <div class="form-field-group" id="subjectContainer">
-                            <label class="field-label" for="subject_or_college">{{ form.subject_or_college.label.text }}</label>
-                            {{ form.subject_or_college(class="field-input" + (" is-invalid" if form.subject_or_college.errors else ""), id="subject_or_college") }}
-                            {% if form.subject_or_college.errors %}
-                                {% for error in form.subject_or_college.errors %}
-                                    <span class="invalid-feedback"><i class="fas fa-exclamation-circle"></i> {{ error }}</span>
-                                {% endfor %}
-                            {% endif %}
-                        </div>
-                        {# -- Class Code Section -- #}
-                        <div class="form-field-group form-field-group--narrow" id="classCodeContainer">
-                            <label class="field-label" for="class_code">{{ form.class_code.label.text }}</label>
-                            {{ form.class_code(class="field-input" + (" is-invalid" if form.class_code.errors else ""), id="class_code") }}
-                            <span class="field-help wildcard-note">
-                                <i class="fas fa-info-circle"></i> Use _ as wildcard (e.g., 241_ for all 241x courses)
-                            </span>
-                            {% if form.class_code.errors %}
-                                {% for error in form.class_code.errors %}
-                                    <span class="invalid-feedback"><i class="fas fa-exclamation-circle"></i> {{ error }}</span>
-                                {% endfor %}
-                            {% endif %}
-                        </div>
+                    {# -- Search Mode Toggle -- #}
+                    <div class="search-mode-toggle" role="group" aria-label="Search mode">
+                        <label class="search-mode-option">
+                            <input type="radio" name="search_mode" value="subject" id="modeSubject" checked>
+                            <span>Subject or College</span>
+                        </label>
+                        <label class="search-mode-option">
+                            <input type="radio" name="search_mode" value="course_type" id="modeCourseType">
+                            <span>Course Type (LASC / WI / 18-Online)</span>
+                        </label>
+                    </div>
 
-                        {# -- Course Type Section -- #}
-                        <div class="form-field-group" id="courseTypeContainer">
+                    {# -- Subject / College Panel -- #}
+                    <div id="subjectPanel" class="search-mode-panel">
+                        <div class="form-fields-row" id="primaryRow">
+                            <div class="form-field-group" id="subjectContainer">
+                                <label class="field-label" for="subject_or_college">{{ form.subject_or_college.label.text }}</label>
+                                {{ form.subject_or_college(class="field-input" + (" is-invalid" if form.subject_or_college.errors else ""), id="subject_or_college") }}
+                                {% if form.subject_or_college.errors %}
+                                    {% for error in form.subject_or_college.errors %}
+                                        <span class="invalid-feedback"><i class="fas fa-exclamation-circle"></i> {{ error }}</span>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            {# -- Class Code Section -- #}
+                            <div class="form-field-group form-field-group--narrow" id="classCodeContainer">
+                                <label class="field-label" for="class_code">{{ form.class_code.label.text }}</label>
+                                {{ form.class_code(class="field-input" + (" is-invalid" if form.class_code.errors else ""), id="class_code") }}
+                                <span class="field-help wildcard-note">
+                                    <i class="fas fa-info-circle"></i> Use _ as wildcard (e.g., 241_ for all 241x courses)
+                                </span>
+                                {% if form.class_code.errors %}
+                                    {% for error in form.class_code.errors %}
+                                        <span class="invalid-feedback"><i class="fas fa-exclamation-circle"></i> {{ error }}</span>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    {# -- Course Type Panel -- #}
+                    <div id="courseTypePanel" class="search-mode-panel search-mode-panel--hidden">
+                        <div class="form-field-group">
                             <label class="field-label" for="course_type">{{ form.course_type.label.text }}</label>
                             {{ form.course_type(class="field-input" + (" is-invalid" if form.course_type.errors else ""), id="course_type") }}
                             {% if form.course_type.errors %}

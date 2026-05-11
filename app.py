@@ -81,8 +81,7 @@ def index():
             dest = build_url(form)
             return redirect(dest)
         else:
-            flash("Please correct the errors below", "error")
-            return render_template("search.html", form=form)
+            return render_template("search.html", form=form, default_term=DEFAULT_TERM)
 
     # GET (initial page or redirected after POST)
     return render_template("search.html", form=form, default_term=DEFAULT_TERM)

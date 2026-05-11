@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="page-container">
-
+        {# -- Search Form Section -- #}
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
@@ -19,9 +19,11 @@
         {% endif %}
     {% endwith %}
 
+
     <div class="hero-card mt-6">
         <div class="card">
 
+            {# -- Header Section -- #}
             <h2><i class="fas fa-search"></i> MSUM Academic Section Headcounts (ASH) Table Builder</h2>
 
             <div class="notice notice-info mt-4">
@@ -37,6 +39,8 @@
 
                 <div class="form-panel mt-4">
 
+
+                    {# -- Primary Search Criteria Section -- #}
                     <p class="form-section-heading">Primary Search Criteria</p>
 
                     <div class="form-fields-row" id="primaryRow">
@@ -49,7 +53,7 @@
                                 {% endfor %}
                             {% endif %}
                         </div>
-
+                        {# -- Class Code Section -- #}
                         <div class="form-field-group form-field-group--narrow" id="classCodeContainer">
                             <label class="field-label" for="class_code">{{ form.class_code.label.text }}</label>
                             {{ form.class_code(class="field-input" + (" is-invalid" if form.class_code.errors else ""), id="class_code") }}
@@ -63,6 +67,7 @@
                             {% endif %}
                         </div>
 
+                        {# -- Course Type Section -- #}
                         <div class="form-field-group" id="courseTypeContainer">
                             <label class="field-label" for="course_type">{{ form.course_type.label.text }}</label>
                             {{ form.course_type(class="field-input" + (" is-invalid" if form.course_type.errors else ""), id="course_type") }}
@@ -74,7 +79,7 @@
                         </div>
                     </div>
 
-
+                    {# -- Term Section -- #}
                     <div class="field-group">
                         <label class="field-label" for="term">{{ form.term.label.text }}</label>
                         {{ form.term(class="field-input" + (" is-invalid" if form.term.errors else ""), id="term") }}
@@ -85,6 +90,7 @@
                         {% endif %}
                     </div>
 
+                    {# -- Term Notice Section -- #}
                     <div class="notice notice-info mt-3">
                         <span>
                             <i class="fas fa-info-circle"></i>
@@ -93,6 +99,7 @@
                         </span>
                     </div>
 
+                    {# -- Form Actions Section -- #}
                     <div class="form-actions mt-5">
                         <button type="submit" class="button button-primary">
                             <i class="fas fa-search"></i> Search Courses

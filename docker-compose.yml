@@ -15,7 +15,7 @@ services:
       - ./app.py:/app/app.py:ro
       - ./utils.py:/app/utils.py:ro
     expose:
-      - "8000"
+      - "8001"
 
   nginx:
     image: nginx:alpine

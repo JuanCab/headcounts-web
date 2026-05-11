@@ -1,3 +1,4 @@
+import json
 import logging
 import sys
 from pathlib import Path
@@ -11,6 +12,7 @@ from config import (
 from config_terms import SEMESTERS_LIST
 from flask import (
     Flask,
+    Response,
     flash,
     redirect,
     render_template,
@@ -22,10 +24,12 @@ from flask_wtf import CSRFProtect
 import polars as pl
 from models import SearchForm
 from utils import (
-    filter_data, 
-    process_data_request, 
-    build_url, 
+    filter_data,
+    process_data_request,
+    build_url,
     get_secret_key,
+    get_analytics_data,
+    _build_display_table,
 )
 
 MAINTENANCE_FILE = Path('.maintenance')

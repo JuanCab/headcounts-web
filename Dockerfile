@@ -18,7 +18,7 @@ COPY . .
 
 # The data files and cache dir are mounted as volumes at runtime —
 # do not bake them into the image.
-RUN mkdir -p viewed-csvs
+RUN mkdir -p viewed-csvs backups data
 
 EXPOSE 8000
 

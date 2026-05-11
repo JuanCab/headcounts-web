@@ -30,7 +30,7 @@
 import polars as pl
 from pathlib import Path
 from datetime import datetime
-from config import CSV_DATA, PARQUET_DATA, SETUP_DIR, BACKUP_DIR, SEMESTER_PY
+from config import CSV_DATA, PARQUET_DATA, BACKUP_DIR, SEMESTER_PY, RUBRIC_TO_COLLEGE
 
 
 def add_index_col(df):
@@ -242,18 +242,12 @@ def _run_update(new_data_file):
         *[col for col in result_df.columns if col not in first_cols]
     )
 
-    # Read in the rubric to college mapping file
-    rubric2college_df = pl.read_csv(f'{SETUP_DIR}Rubric2College.csv')
-
-    # Map the "Subj" column to the "College" column using the
-    # rubric2college_df dataframe
-    result_df = result_df.join(
-        rubric2college_df,
-        left_on='Subj',
-        right_on='Rubric',
-        how='left'
+    # Map the "Subj" column to a college code using the RUBRIC_TO_COLLEGE
+    # dict defined in config.py. Unknown rubrics default to 'NONE'.
+    result_df = result_df.with_columns(
+        pl.col('Subj').replace(RUBRIC_TO_COLLEGE,
+                               default='NONE').alias('College')
     )
-    result_df = result_df.drop('College').rename({'CollegeCode': 'College'})
 
     # Make sure the following columns are the last few columns in the
     # dataframe in this order

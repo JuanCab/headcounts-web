@@ -107,6 +107,7 @@
         const table = document.getElementById('resultsTable');
         if (!table) return;
 
+        // Initialize DataTables with client-side pagination and deferred rendering
         const dt = new DataTable(table, {
             deferRender: true,
             pageLength: 25,
@@ -122,6 +123,7 @@
             }
         });
 
+        // Export only the currently filtered/visible rows as a CSV download
         document.getElementById('exportFilteredBtn').addEventListener('click', function () {
             const rows = dt.rows({ search: 'applied' }).data();
             const columns = dt.columns().header().toArray().map(th => th.textContent.trim());

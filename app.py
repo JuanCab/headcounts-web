@@ -126,9 +126,11 @@ def filtered_view(subject, spec1=None, spec2=None):
 def data_view(subject, spec1=None, spec2=None):
     """Return processed table data as JSON for DataTables Ajax loading."""
     import json as _json
+    # Load and filter the dataset the same way filtered_view does
     table = pl.read_parquet(PARQUET_DATA).lazy()
     filtered_table, _ = filter_data(table, subject, spec1, spec2)
     render_me = filtered_table.collect()
+    # Return an empty DataTables-compatible payload if nothing matched
     if render_me.is_empty():
         return Response(_json.dumps({'columns': [], 'data': []}), mimetype='application/json')
     columns, rows = _build_display_table(render_me)

@@ -435,8 +435,11 @@ def _build_display_table(render_me):
     return (columns, rows) ready for DataTables — either HTML rendering or
     JSON serialization.
     """
+    # Rename fiscal year/term to an internal name so it doesn't appear as a
+    # display column but is still accessible for building course ID links.
     render_me = render_me.rename({'Fiscal yrtr': 'year_term'})
 
+    # Format money columns as "$X,XXX.XX" strings
     money_cols = ['Tuition Resident', 'Tuition Non-Resident',
                   'Approximate Course Fees', 'Book Cost']
     render_me = render_me.with_columns([
@@ -446,11 +449,14 @@ def _build_display_table(render_me):
         for col in money_cols
     ])
 
+    # Format the Last Updated timestamp as a readable string
     render_me = render_me.with_columns(
         pl.col('Last Updated').dt.strftime(
             '%Y-%m-%d %H:%M:%S').alias('Last Updated')
     )
 
+    # Build an HTML anchor link for each course ID using the MinnState detail
+    # URL. The ID is zero-padded to 6 digits to match what MinnState expects.
     fmt_string = "<a href='" + COURSE_DETAIL_URL + "'>{course_id}</a>"
     cleaned_fmt_string = re.sub(r"\{[^}]*\}", "{}", fmt_string)
 
@@ -465,6 +471,7 @@ def _build_display_table(render_me):
                   pl.col('course_id_str')).alias("ID #")
     ).drop('course_id_str')
 
+    # Drop internal columns and collect rows as plain Python lists for DataTables
     cols_to_exclude = {'year_term'}
     display_columns = [
         c for c in render_me.columns if c not in cols_to_exclude]
@@ -836,6 +843,7 @@ def get_analytics_data(table, current_term=None):
 
     current_active = current.filter(pl.col('Status') != 'Cancelled')
 
+    # --- Summary stats for current term ---
     total_enrolled = int(current_active['Enrolled'].sum(
     )) if not current_active.is_empty() else 0
     total_sch = int(current_active['_sch'].sum()
@@ -887,6 +895,7 @@ def get_analytics_data(table, current_term=None):
         .head(12)
     )
 
+    # Collect the per-group aggregations to plain dicts for JSON serialization
     college_rows = by_college.to_dicts()
     top_rows = top_courses.to_dicts()
 
@@ -924,6 +933,7 @@ def get_analytics_data(table, current_term=None):
     else:
         canc_rows = []
 
+    # Assemble and return the full response dict — everything the analytics template needs
     return {
         'current_term_name': current_term_name,
         'current_term_code': current_term,

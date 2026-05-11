@@ -35,6 +35,7 @@
 
         <h2 class="mt-2 mb-4">Course Analytics: <strong>{{ current_term_name }}</strong></h2>
 
+    <!-- ── SECTION: Summary stat cards ───────────────────────────────────────── -->
     <div class="stats-grid mb-5">
         <div class="stat-card">
             <span class="stat-label">Students Enrolled</span>
@@ -54,6 +55,7 @@
         </div>
     </div>
 
+    <!-- ── SECTION: Term selector and page nav ───────────────────────────── -->
     <div class="analytics-term-header">
         <form method="get" action="{{ url_for('analytics') }}" class="term-selector-form">
             <span class="term-selector-label">Term:</span>
@@ -66,6 +68,7 @@
         <a href="{{ url_for('index') }}" class="button button-secondary button--sm">Back to Search</a>
     </div>
 
+    <!-- ── SECTION: Current term charts ──────────────────────────────────── -->
     <div class="chart-row chart-row--714 mb-4">
         <div class="chart-card">
             <h3>Enrollment by College — {{ current_term_name }}</h3>
@@ -147,6 +150,7 @@
         }
     };
 
+    // ── CHART: Enrollment History (all terms) ─────────────────────────────────
     new Chart(document.getElementById('enrollmentTrendChart'), {
         type: 'line',
         data: {
@@ -165,6 +169,7 @@
         options: baseLineOpts
     });
 
+    // ── CHART: Student Credit Hours (all terms) ──────────────────────────────
     new Chart(document.getElementById('schTrendChart'), {
         type: 'line',
         data: {
@@ -183,6 +188,7 @@
         options: baseLineOpts
     });
 
+    // ── CHART: Enrollment by College (current term) ────────────────────────
     new Chart(document.getElementById('collegeChart'), {
         type: 'bar',
         data: {
@@ -205,6 +211,7 @@
         }
     });
 
+    // ── CHART: Delivery Mode (current term) ─────────────────────────────────
     new Chart(document.getElementById('deliveryChart'), {
         type: 'doughnut',
         data: {
@@ -224,6 +231,7 @@
         }
     });
 
+    // ── CHART: Top 10 Courses by Enrollment (current term) ──────────────────
     new Chart(document.getElementById('topCoursesChart'), {
         type: 'bar',
         data: {
@@ -256,6 +264,7 @@
         }
     });
 
+    // ── CHART: Seat Utilization by College (current term) ───────────────────
     new Chart(document.getElementById('seatUtilChart'), {
         type: 'bar',
         data: {

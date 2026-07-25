@@ -2,7 +2,7 @@
 
 A Flask web app for browsing course enrollment data at [Minnesota State University Moorhead](http://www.mnstate.edu). Data is scraped from the public MinnState course search tool and served as a searchable, filterable table with download support and an analytics dashboard.
 
-**Stack:** Python 3.12, Flask, Polars, DataTables.js, Chart.js, gunicorn, nginx, Docker
+**Stack:** Python 3.12, Flask, Polars, DataTables.js, Chart.js, gunicorn, Docker
 
 ---
 
@@ -52,8 +52,8 @@ headcounts-web/
 │           └── maintenance.css # .error-page styles
 │
 ├── Dockerfile               # Production image (python:3.12-slim + gunicorn)
-├── docker-compose.yml       # nginx + app services with volume mounts
-├── nginx.conf               # nginx reverse proxy config
+├── docker-compose.yml       # App service with volume mounts and Traefik labels
+├── nginx.conf               # nginx config (kept for reference; nginx not in current stack)
 ├── .dockerignore            # Files excluded from the Docker build context
 ├── .env.example             # Template for the required .env file
 ├── Procfile                 # Process definition for gunicorn (legacy Heroku artifact)
@@ -69,14 +69,15 @@ headcounts-web/
 
 All Flask routes live here. The main ones:
 
-| Route | Function | Description |
-|---|---|---|
-| `GET/POST /` | `index` | Renders the search form; on POST, validates and redirects to the filtered URL |
-| `GET /<subject>/...` | `filtered_view` | Reads parquet, filters data, renders results table |
-| `GET /analytics` | `analytics` | Renders the Chart.js dashboard; accepts `?term=` query param |
-| `GET /data/<subject>/...` | `data_view` | Returns filtered data as DataTables-compatible JSON |
-| `GET /api/<subject>/...` | `api_view` | Returns raw filtered data as Polars JSON |
-| `GET /download/<filename>` | `download` | Serves cached CSV/Excel files from `viewed-csvs/` |
+| Route | Method | Function | Description |
+|---|---|---|---|
+| `/` | GET/POST | `index` | Renders the search form; on POST validates and redirects to the filtered URL |
+| `/<subject>/...` | GET | `filtered_view` | Filters parquet data, calculates stats, renders results page |
+| `/data/<subject>/...` | GET/POST | `data_view` | DataTables server-side endpoint: handles `draw`, `start`, `length`, search, and sort |
+| `/csv/<subject>/...` | GET | `csv_view` | Returns filtered data as a CSV download; accepts `?q=` for text search |
+| `/api/<subject>/...` | GET | `api_view` | Returns raw filtered data as Polars JSON |
+| `/analytics` | GET | `analytics` | Renders the Chart.js dashboard; accepts `?term=` query param |
+| `/download/<filename>` | GET | `download` | Serves cached CSV/Excel files from `viewed-csvs/` |
 
 The `check_site_status` `@before_request` hook blocks all non-static requests with a 503 page if `.maintenance` exists or if `all_enrollments.parquet` is missing.
 
@@ -86,7 +87,7 @@ Data processing and helper functions:
 
 - `filter_data(tbl, subject, spec1, spec2)` — applies URL-based filters to the Polars LazyFrame. Handles colleges, LASC/WI, course numbers, wildcards, and term codes.
 - `_build_display_table(render_me)` — formats a collected DataFrame for display: renames columns, formats money and dates, converts course IDs to HTML links. Returns `(columns, rows)` as plain lists.
-- `process_data_request(render_me, path, subj_text)` — calculates stats (SCH, seats, tuition), generates download files, calls `_build_display_table`, and renders `results.html`.
+- `process_data_request(render_me, path, subj_text)` — calculates stats (SCH, seats, tuition), generates download files, extracts display column names, and renders `results.html`. Table rows are loaded client-side via the `/data/` Ajax endpoint.
 - `get_analytics_data(table, current_term)` — aggregates enrollment data for the analytics dashboard.
 - `calc_sch`, `calc_seats`, `calc_tuition` — individual stat helpers.
 - `generate_datafiles` — writes CSV and Excel download files to `viewed-csvs/`.
@@ -110,10 +111,16 @@ Takes a scraped CSV file, merges it into `all_enrollments.csv` and `all_enrollme
 
 ## Adding a new semester
 
-1. Run the scraper for the new term code and feed the output to `update_data_table.py` — it will add the term to `config_terms.py` automatically.
-2. Update `DEFAULT_TERM` in `config.py` to the new term's code and name.
-
-That's it. The term dropdown on the search and analytics pages pulls from `SEMESTERS_LIST` in `config_terms.py`, which the updater maintains.
+1. Run the scraper for the new term code:
+   ```bash
+   python scrape.py --year-term <term-code>
+   ```
+2. Feed the output to the updater:
+   ```bash
+   python update_data_table.py data/<scraped-file>.csv
+   ```
+   This merges the new data, rebuilds the parquet file, and updates `config_terms.py` automatically. Old backup files and stale download cache files are cleaned up at the end.
+3. Update `DEFAULT_TERM` in `config.py` to the new term's code and name.
 
 ---
 
@@ -121,10 +128,11 @@ That's it. The term dropdown on the search and analytics pages pulls from `SEMES
 
 ```bash
 cp .env.example .env          # fill in SECRET_KEY at minimum
+docker network create proxy   # only needed once on the host; skipped if proxy already exists
 docker compose up --build
 ```
 
-The app will be available at `http://localhost`. Templates, `app.py`, and `utils.py` are bind-mounted, so changes to those files take effect after `docker compose restart app`. Changes to other Python files or the CSS require a rebuild.
+The app will be available at `http://localhost:8000` when using the override file, or routed through Traefik on the production host. Templates, `app.py`, and `utils.py` are bind-mounted, so changes to those files take effect after `docker compose restart`. Changes to other Python files or the CSS require a rebuild (`docker compose up --build`).
 
 ---
 

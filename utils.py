@@ -422,8 +422,9 @@ def generate_datafiles(table, path, subj_text, dir=CACHE_DIR):
     # Define formatting and other information for the Excel file
     excel_file = f"{filename_base}.xlsx"
     excel_path = Path(CACHE_DIR) / excel_file
-    table.write_excel(
-        excel_path, worksheet=sanitize_excel_sheetname(subj_text))
+    if not excel_path.is_file():
+        table.write_excel(
+            excel_path, worksheet=sanitize_excel_sheetname(subj_text))
 
     # Return the names of the files
     return csv_file, excel_file
@@ -515,7 +516,8 @@ def process_data_request(render_me, path, subj_text):
 
     # Check for an empty DataFrame, if so, return a custom response
     if render_me.is_empty():
-        return render_template('results.html', subject=subj_text, n_rows=0)
+        return render_template('results.html', subject=subj_text, n_rows=0,
+                               data_url='/data' + path)
 
     # Determine all the unique 'Term' in this polars Dataframe, sorted
     # by Fiscal year/term,
@@ -560,13 +562,16 @@ def process_data_request(render_me, path, subj_text):
     seats = calc_seats(render_me)
     calulcated_tuition = calc_tuition(render_me)
 
-    columns, rows = _build_display_table(render_me)
-    n_rows = len(rows)
+    # Get column names cheaply — no need to build formatted rows here since
+    # the table is populated via Ajax by the /data/ endpoint.
+    _display = render_me.rename({'Fiscal yrtr': 'year_term'})
+    columns = [c for c in _display.columns if c != 'year_term']
+    n_rows = len(render_me)
+    data_url = '/data' + path
 
     # Render the page using the 'results.html' template.
     return render_template('results.html',
                            columns=columns,
-                           rows=rows,
                            subject=subj_text,
                            n_rows=n_rows,
                            oldest=oldest,
@@ -575,7 +580,8 @@ def process_data_request(render_me, path, subj_text):
                            csv_file=csv_filename,
                            excel_file=excel_filename,
                            seats=seats,
-                           revenue=calulcated_tuition)
+                           revenue=calulcated_tuition,
+                           data_url=data_url)
 
 
 def get_secret_key():

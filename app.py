@@ -1,5 +1,7 @@
 import json
 import logging
+import os
+import re
 import sys
 from pathlib import Path
 
@@ -33,6 +35,22 @@ from utils import (
 )
 
 MAINTENANCE_FILE = Path('.maintenance')
+
+# Module-level parquet cache — re-read only when the file changes on disk
+_parquet_cache = {'df': None, 'mtime': None}
+
+
+def get_parquet():
+    """Return cached parquet DataFrame, refreshing only if the file mtime changed."""
+    try:
+        mtime = os.path.getmtime(PARQUET_DATA)
+    except FileNotFoundError:
+        return None
+    if _parquet_cache['df'] is None or _parquet_cache['mtime'] != mtime:
+        _parquet_cache['df'] = pl.read_parquet(PARQUET_DATA)
+        _parquet_cache['mtime'] = mtime
+    return _parquet_cache['df']
+
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
 
@@ -96,10 +114,8 @@ def filtered_view(subject, spec1=None, spec2=None):
     if subject == "favicon.ico":
         return ""
 
-    # Read the Parquet file containing course enrollment data as a lazy
-    # Polars DataFrame. This allows for efficient querying without loading
-    # the entire dataset into memory at once.
-    table = pl.read_parquet(PARQUET_DATA).lazy()
+    # Get the cached parquet DataFrame and make it lazy for efficient filtering.
+    table = get_parquet().lazy()
 
     # Crate a directory for cached CSV files if it does not already exist.
     Path(CACHE_DIR).mkdir(parents=True, exist_ok=True)
@@ -120,22 +136,64 @@ def filtered_view(subject, spec1=None, spec2=None):
     return process_data_request(render_me, request.path, subj_text)
 
 
-@app.route("/data/<subject>")
-@app.route("/data/<subject>/<spec1>")
-@app.route("/data/<subject>/<spec1>/<spec2>")
+@app.route("/data/<subject>", methods=['GET', 'POST'])
+@app.route("/data/<subject>/<spec1>", methods=['GET', 'POST'])
+@app.route("/data/<subject>/<spec1>/<spec2>", methods=['GET', 'POST'])
+@csrf.exempt
 def data_view(subject, spec1=None, spec2=None):
-    """Return processed table data as JSON for DataTables Ajax loading."""
-    import json as _json
-    # Load and filter the dataset the same way filtered_view does
-    table = pl.read_parquet(PARQUET_DATA).lazy()
+    """Return filtered data in DataTables server-side processing format."""
+    # Accept POST (to avoid gunicorn request-line length limit with many columns)
+    # or GET for direct access. CSRF exempt: read-only endpoint, no state changes.
+    params = request.form if request.method == 'POST' else request.args
+    draw = int(params.get('draw', 1))
+    start = int(params.get('start', 0))
+    length = int(params.get('length', 25))
+    search_value = params.get('search[value]', '').strip().lower()
+    order_col_idx = int(params.get('order[0][column]', -1))
+    order_dir = params.get('order[0][dir]', 'asc')
+
+    table = get_parquet().lazy()
     filtered_table, _ = filter_data(table, subject, spec1, spec2)
     render_me = filtered_table.collect()
-    # Return an empty DataTables-compatible payload if nothing matched
+
     if render_me.is_empty():
-        return Response(_json.dumps({'columns': [], 'data': []}), mimetype='application/json')
+        return Response(
+            json.dumps({'draw': draw, 'recordsTotal': 0, 'recordsFiltered': 0, 'data': []}),
+            mimetype='application/json'
+        )
+
     columns, rows = _build_display_table(render_me)
+    records_total = len(rows)
+
+    _html_re = re.compile(r'<[^>]+' + '>')
+
+    def _cell_text(cell):
+        return _html_re.sub('', str(cell)).strip().lower() if cell is not None else ''
+
+    # Apply global search across all columns (matched against visible text, not raw HTML)
+    if search_value:
+        rows = [row for row in rows if any(search_value in _cell_text(c) for c in row)]
+    records_filtered = len(rows)
+
+    # Apply column sort — numeric-aware so enrolled counts and IDs sort correctly
+    if 0 <= order_col_idx < len(columns):
+        def _sort_key(row):
+            text = _cell_text(row[order_col_idx])
+            try:
+                return (0, float(text.replace(',', '').replace('$', '')))
+            except ValueError:
+                return (1, text)
+        rows.sort(key=_sort_key, reverse=(order_dir == 'desc'))
+
+    page_rows = rows[start:start + length]
+
     return Response(
-        _json.dumps({'columns': columns, 'data': rows}),
+        json.dumps({
+            'draw': draw,
+            'recordsTotal': records_total,
+            'recordsFiltered': records_filtered,
+            'data': page_rows,
+        }),
         mimetype='application/json'
     )
 
@@ -154,7 +212,7 @@ def download(filename):
 @app.route("/analytics")
 def analytics():
     """Render the analytics/overview dashboard page."""
-    table = pl.read_parquet(PARQUET_DATA)
+    table = get_parquet()
     # Allow term selection via ?term=XXXXX; fall back to default
     try:
         selected_term = int(request.args.get('term', DEFAULT_TERM[0]))
@@ -179,10 +237,39 @@ def api_view(subject, spec1=None, spec2=None):
     Return filtered enrollment data as JSON.
     Accepts the same URL parameters as the main filtered_view.
     """
-    table = pl.read_parquet(PARQUET_DATA).lazy()
+    table = get_parquet().lazy()
     filtered_table, _ = filter_data(table, subject, spec1, spec2)
     result = filtered_table.collect()
     return Response(result.write_json(), mimetype='application/json')
+
+
+@app.route("/csv/<subject>")
+@app.route("/csv/<subject>/<spec1>")
+@app.route("/csv/<subject>/<spec1>/<spec2>")
+def csv_view(subject, spec1=None, spec2=None):
+    """
+    Return filtered enrollment data as a CSV file download.
+    Accepts the same URL structure as /api/ plus an optional ?q= text search param.
+    """
+    table = get_parquet().lazy()
+    filtered_table, _ = filter_data(table, subject, spec1, spec2)
+    result = filtered_table.collect()
+
+    # Optional text search matching what DataTables sends as search[value]
+    q = request.args.get('q', '').strip().lower()
+    if q and not result.is_empty():
+        str_cols = [c for c, dtype in zip(result.columns, result.dtypes) if dtype == pl.Utf8]
+        mask = pl.lit(False)
+        for col in str_cols:
+            mask = mask | pl.col(col).str.to_lowercase().str.contains(q, literal=True)
+        result = result.filter(mask)
+
+    safe_name = re.sub(r'[^a-zA-Z0-9_-]', '_', subject)
+    return Response(
+        result.write_csv(),
+        mimetype='text/csv',
+        headers={"Content-Disposition": f"attachment; filename={safe_name}.csv"}
+    )
 
 
 if __name__ == "__main__":

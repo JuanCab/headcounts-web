@@ -4,42 +4,26 @@ services:
     restart: unless-stopped
     env_file: .env
     volumes:
-      # Bind-mount the data files so the scraper running on the host
-      # can update them without rebuilding the container.
       - ./all_enrollments.parquet:/app/all_enrollments.parquet
       - ./all_enrollments.csv:/app/all_enrollments.csv
-      # Named volume for download cache so it persists across restarts.
       - viewed-csvs:/app/viewed-csvs
-      # Bind-mount code so changes take effect without rebuilding.
       - ./templates:/app/templates:ro
       - ./app.py:/app/app.py:ro
       - ./utils.py:/app/utils.py:ro
     expose:
-      - "8001"
+      - "8000"
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
       - "traefik.http.routers.headcounts.rule=Host(`headcounts.mooreai.net`)"
       - "traefik.http.routers.headcounts.entrypoints=web"
-      - "traefik.http.services.headcounts.loadbalancer.server.port=8001"
+      - "traefik.http.services.headcounts.loadbalancer.server.port=8000"
     networks:
       - proxy
 
 networks:
   proxy:
     external: true
-
-    
-  nginx:
-    image: nginx:alpine
-    restart: unless-stopped
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./static:/app/static:ro
-    depends_on:
-      - headcounts
 
 volumes:
   viewed-csvs:

@@ -30,7 +30,27 @@
 import polars as pl
 from pathlib import Path
 from datetime import datetime
-from config import CSV_DATA, PARQUET_DATA, BACKUP_DIR, SEMESTER_PY, RUBRIC_TO_COLLEGE
+from config import CSV_DATA, PARQUET_DATA, BACKUP_DIR, CACHE_DIR, SEMESTER_PY, RUBRIC_TO_COLLEGE
+
+
+def _cleanup_backups(keep=7):
+    """Keep only the most recent `keep` backup CSV files, delete older ones."""
+    files = sorted(Path(BACKUP_DIR).glob('*.csv'), key=lambda f: f.stat().st_mtime)
+    for old in files[:-keep]:
+        old.unlink()
+        print(f"Deleted old backup: {old.name}")
+
+
+def _cleanup_cache(max_age_days=7):
+    """Delete viewed-csvs files that haven't been accessed in `max_age_days` days."""
+    cache_dir = Path(CACHE_DIR)
+    if not cache_dir.exists():
+        return
+    cutoff = datetime.now().timestamp() - max_age_days * 86400
+    for f in cache_dir.iterdir():
+        if f.is_file() and f.stat().st_mtime < cutoff:
+            f.unlink()
+            print(f"Deleted old cache file: {f.name}")
 
 
 def add_index_col(df):
@@ -289,6 +309,10 @@ def _run_update(new_data_file):
         for semester in semesters_list:
             f.write(f"    ({semester['year_term']}, '{semester['Term']}'),\n")
         f.write("]\n")
+
+    # Clean up old backup files (keep last 7) and stale cache files (older than 7 days)
+    _cleanup_backups(keep=7)
+    _cleanup_cache(max_age_days=7)
 
     # Return the resulting dataframe
     return result_df

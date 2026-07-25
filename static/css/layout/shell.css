@@ -24,13 +24,15 @@
 }
 
 .header-inner {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: var(--space-4);
     justify-content: center;
 }
 
 .header-logo {
+    position: absolute;
+    left: 0;
     height: 60px;
     width: auto;
 }
@@ -144,4 +146,3 @@
     color: var(--color-accent-strong);
     text-decoration: underline;
 }
-

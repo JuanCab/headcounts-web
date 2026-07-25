@@ -4,7 +4,6 @@
 
 {% block head %}
 <link rel="stylesheet" href="https://cdn.datatables.net/2.3.2/css/dataTables.dataTables.min.css">
-<link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.2/css/buttons.dataTables.min.css">
 {% endblock %}
 
 {% block content %}
@@ -84,11 +83,7 @@
                         {% endfor %}
                     </tr>
                 </thead>
-                <tbody>
-                    {% for row in rows %}
-                    <tr>{% for v in row %}<td>{{ v|safe }}</td>{% endfor %}</tr>
-                    {% endfor %}
-                </tbody>
+                <tbody></tbody>
             </table>
         </div>
 
@@ -100,22 +95,32 @@
 {% block scripts %}
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/2.3.2/js/dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/3.2.2/js/dataTables.buttons.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/3.2.2/js/buttons.html5.min.js"></script>
 <script>
     (function () {
         const table = document.getElementById('resultsTable');
         if (!table) return;
+        const DATA_URL = {{ data_url | tojson }};
 
-        // Initialize DataTables with client-side pagination and deferred rendering
         const dt = new DataTable(table, {
-            deferRender: true,
+            serverSide: true,
+            processing: true,
+            ajax: {
+                url: DATA_URL,
+                type: 'POST'
+            },
+            // Render cell content as raw HTML (safe: content is server-generated,
+            // not user input; the only HTML is the course ID anchor link)
+            columnDefs: [{
+                targets: '_all',
+                render: function (data) { return data === null || data === undefined ? '' : data; }
+            }],
             pageLength: 25,
             lengthMenu: [25, 50, 100, 250],
             order: [],
             language: {
                 info: 'Showing _START_-_END_ of _TOTAL_ rows',
                 infoFiltered: '(filtered from _MAX_ total rows)',
+                processing: 'Loading…',
             },
             initComplete: function () {
                 const btn = document.getElementById('exportFilteredBtn');
@@ -123,28 +128,15 @@
             }
         });
 
-        // Export only the currently filtered/visible rows as a CSV download
+        // Export the currently filtered data via the /csv/ endpoint so the
+        // download reflects the active DataTables search term.
         document.getElementById('exportFilteredBtn').addEventListener('click', function () {
-            const rows = dt.rows({ search: 'applied' }).data();
-            const columns = dt.columns().header().toArray().map(th => th.textContent.trim());
-
-            const escape = v => {
-                const s = v === null || v === undefined ? '' : String(v).replace(/<[^>]*>/g, '').trim();
-                return s.includes(',') || s.includes('"') || s.includes('\n') ? '"' + s.replace(/"/g, '""') + '"' : s;
-            };
-
-            const lines = [columns.map(escape).join(',')];
-            rows.each(function (row) {
-                lines.push(Array.from(row).map(escape).join(','));
-            });
-
-            const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'filtered_results.csv';
-            a.click();
-            URL.revokeObjectURL(url);
+            const searchVal = dt.search();
+            let csvUrl = '/csv' + window.location.pathname;
+            if (searchVal) {
+                csvUrl += '?q=' + encodeURIComponent(searchVal);
+            }
+            window.location = csvUrl;
         });
     })();
 </script>

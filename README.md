@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="static/images/headcounter-banner.png" alt="Course Headcounts" width="100%">
+</p>
+
 # Headcounts
 
 A Flask web app for browsing course enrollment data at [Minnesota State University Moorhead](http://www.mnstate.edu). Data is scraped from the public MinnState course search tool and served as a searchable, filterable table with download support and an analytics dashboard.
@@ -38,5 +42,5 @@ See `Developer-Reference.md` for the full workflow and file-by-file details.
 - Fonts: [Google Fonts](https://fonts.google.com/) (Public Sans, IBM Plex Sans)
 - Original version: [Matthew Craig](https://github.com/mwcraig/)
 - Backend and Polars migration: [Juan Cabanela](https://web.mnstate.edu/cabanela/)
-- Front-end redesign: [Natoli Tesgera](https://github.com/Natoli74)
+- Front-end redesign: [Natoli Tesgera](https://github.com/Natoli74), [Laween Al-Sulaivany](https://github.com/laween-alsulaivany)
 - Docker deployment, infrastructure, and data pipeline: [Laween Al-Sulaivany](https://github.com/laween-alsulaivany)

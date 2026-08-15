@@ -32,6 +32,8 @@ from utils import (
     get_secret_key,
     get_analytics_data,
     _build_display_table,
+    _display_text,
+    _search_rows,
 )
 
 MAINTENANCE_FILE = Path('.maintenance')
@@ -50,6 +52,12 @@ def get_parquet():
         _parquet_cache['df'] = pl.read_parquet(PARQUET_DATA)
         _parquet_cache['mtime'] = mtime
     return _parquet_cache['df']
+
+
+def _load_filtered(subject, spec1=None, spec2=None):
+    """Load, filter, and collect the parquet in one call. Returns (df, subj_text)."""
+    lf, subj_text = filter_data(get_parquet().lazy(), subject, spec1, spec2)
+    return lf.collect(), subj_text
 
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
@@ -114,25 +122,8 @@ def filtered_view(subject, spec1=None, spec2=None):
     if subject == "favicon.ico":
         return ""
 
-    # Get the cached parquet DataFrame and make it lazy for efficient filtering.
-    table = get_parquet().lazy()
-
-    # Crate a directory for cached CSV files if it does not already exist.
     Path(CACHE_DIR).mkdir(parents=True, exist_ok=True)
-
-    # Get a filtered version of the lazy DataFrame based on the subject
-    # (including LASC, WI, or all courses).
-    filtered_table, subj_text = filter_data(table, subject, spec1, spec2)
-
-    # Collect the filtered DataFrame into a regular Polars DataFrame
-    # to be rendered in the template.
-    render_me = filtered_table.collect()
-
-    # Call process_data_request to render the filtered data in the render_me
-    # DataFrame and return the response. The request path is passed to
-    # common_response to ensure the correct URL is used for the download link.
-    # The subj_text is also passed to provide context for the subject
-    # being viewed.
+    render_me, subj_text = _load_filtered(subject, spec1, spec2)
     return process_data_request(render_me, request.path, subj_text)
 
 
@@ -152,9 +143,7 @@ def data_view(subject, spec1=None, spec2=None):
     order_col_idx = int(params.get('order[0][column]', -1))
     order_dir = params.get('order[0][dir]', 'asc')
 
-    table = get_parquet().lazy()
-    filtered_table, _ = filter_data(table, subject, spec1, spec2)
-    render_me = filtered_table.collect()
+    render_me, _ = _load_filtered(subject, spec1, spec2)
 
     if render_me.is_empty():
         return Response(
@@ -165,20 +154,14 @@ def data_view(subject, spec1=None, spec2=None):
     columns, rows = _build_display_table(render_me)
     records_total = len(rows)
 
-    _html_re = re.compile(r'<[^>]+' + '>')
-
-    def _cell_text(cell):
-        return _html_re.sub('', str(cell)).strip().lower() if cell is not None else ''
-
-    # Apply global search across all columns (matched against visible text, not raw HTML)
     if search_value:
-        rows = [row for row in rows if any(search_value in _cell_text(c) for c in row)]
+        mask = _search_rows(rows, search_value)
+        rows = [row for row, keep in zip(rows, mask) if keep]
     records_filtered = len(rows)
 
-    # Apply column sort — numeric-aware so enrolled counts and IDs sort correctly
     if 0 <= order_col_idx < len(columns):
         def _sort_key(row):
-            text = _cell_text(row[order_col_idx])
+            text = _display_text(row[order_col_idx])
             try:
                 return (0, float(text.replace(',', '').replace('$', '')))
             except ValueError:
@@ -237,9 +220,7 @@ def api_view(subject, spec1=None, spec2=None):
     Return filtered enrollment data as JSON.
     Accepts the same URL parameters as the main filtered_view.
     """
-    table = get_parquet().lazy()
-    filtered_table, _ = filter_data(table, subject, spec1, spec2)
-    result = filtered_table.collect()
+    result, _ = _load_filtered(subject, spec1, spec2)
     return Response(result.write_json(), mimetype='application/json')
 
 
@@ -251,18 +232,13 @@ def csv_view(subject, spec1=None, spec2=None):
     Return filtered enrollment data as a CSV file download.
     Accepts the same URL structure as /api/ plus an optional ?q= text search param.
     """
-    table = get_parquet().lazy()
-    filtered_table, _ = filter_data(table, subject, spec1, spec2)
-    result = filtered_table.collect()
+    result, _ = _load_filtered(subject, spec1, spec2)
 
-    # Optional text search matching what DataTables sends as search[value]
     q = request.args.get('q', '').strip().lower()
     if q and not result.is_empty():
-        str_cols = [c for c, dtype in zip(result.columns, result.dtypes) if dtype == pl.Utf8]
-        mask = pl.lit(False)
-        for col in str_cols:
-            mask = mask | pl.col(col).str.to_lowercase().str.contains(q, literal=True)
-        result = result.filter(mask)
+        # Build display rows so the search matches exactly what the user saw on screen
+        _, display_rows = _build_display_table(result)
+        result = result.filter(pl.Series(_search_rows(display_rows, q)))
 
     safe_name = re.sub(r'[^a-zA-Z0-9_-]', '_', subject)
     return Response(

@@ -15,7 +15,6 @@ from config_terms import SEMESTERS_LIST
 from flask import (
     Flask,
     Response,
-    flash,
     redirect,
     render_template,
     request,

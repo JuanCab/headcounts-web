@@ -6,6 +6,20 @@ from flask import render_template
 import polars as pl
 import os
 
+# Pre-compiled once; used by _display_text and _search_rows below.
+_HTML_RE = re.compile(r'<[^>]+>')
+
+
+def _display_text(cell):
+    """Return the visible text of a display cell — HTML stripped, lowercased."""
+    return _HTML_RE.sub('', str(cell)).strip().lower() if cell is not None else ''
+
+
+def _search_rows(display_rows, search_value):
+    """Return a bool mask of display_rows whose visible text contains search_value."""
+    sv = search_value.lower()
+    return [any(sv in _display_text(c) for c in row) for row in display_rows]
+
 #
 # This is an importable file of utility functions for the Flask app.
 # The only functions that actually get imported int the app are

@@ -17,7 +17,6 @@ A simple web app for displaying (reasonably) up-to-date enrollments in courses a
   - [Flask](http://flask.pocoo.org/) (web framework)
   - [Bootstrap](https://getbootstrap.com/) (styling)
   - [Polars](https://pola.rs/) (data processing)
-  - Hosted on [Heroku](https://www.heroku.com/)
 
 ---
 
@@ -49,5 +48,3 @@ are needed to update the app:
 ## Acknowledgments
 
 - Data processed with [Polars](https://pola.rs/)
-- Hosted by [Heroku](https://www.heroku.com/)
-- Thanks to [Kenneth Reitz](https://github.com/kennethreitz/) for the [conda buildpack for Heroku](https://github.com/kennethreitz/conda-buildpack)

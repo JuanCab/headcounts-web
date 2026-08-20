@@ -1,0 +1,111 @@
+/* ── Analytics page layout and chart containers ──────────────────────────── */
+
+.section-separator {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    font-family: var(--font-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.section-separator::before,
+.section-separator::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--color-border);
+}
+
+.analytics-term-header {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    background: var(--color-surface-muted);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-3) var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.term-selector-form {
+    display: grid;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.term-selector-label {
+    font-family: var(--font-secondary);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+}
+
+.term-selector-input {
+    width: auto;
+    min-width: 12rem;
+}
+
+/* ── Chart card ──────────────────────────────────────────────────────────── */
+
+.chart-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: var(--space-5);
+}
+
+.chart-card h3 {
+    margin: 0 0 var(--space-4);
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+/* ── Chart containers ────────────────────────────────────────────────────── */
+
+.chart-container {
+    position: relative;
+    height: 280px;
+}
+
+.chart-container--tall {
+    position: relative;
+    height: 340px;
+}
+
+/* ── Chart grid layouts ──────────────────────────────────────────────────── */
+
+.chart-row {
+    display: grid;
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.chart-row--equal {
+    grid-template-columns: 1fr 1fr;
+}
+
+.chart-row--714 {
+    grid-template-columns: 1.4fr 1fr;
+}
+
+@media (max-width: 768px) {
+    .chart-row--equal,
+    .chart-row--714 {
+        grid-template-columns: 1fr;
+    }
+}

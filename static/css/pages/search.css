@@ -1,0 +1,84 @@
+/* ── Search page ─────────────────────────────────────────────────────────── */
+
+.hero-card {
+    max-width: 880px;
+    margin: 0 auto;
+}
+
+.hero-card h1,
+.hero-card h2 {
+    margin: 0 0 var(--space-3);
+    font-size: clamp(1.45rem, 1.25rem + 0.9vw, 2rem);
+    line-height: var(--line-title);
+    letter-spacing: -0.01em;
+}
+
+.hero-card p {
+    margin: 0;
+    max-width: 62ch;
+    color: var(--color-text-muted);
+    font-family: var(--font-secondary);
+}
+
+/* ── Search mode segmented toggle ────────────────────────────────────────── */
+
+.search-mode-toggle {
+    display: flex;
+    background: var(--color-bg, #f5f6f7);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 3px;
+    gap: 2px;
+    width: fit-content;
+    margin-bottom: var(--space-4);
+}
+
+.search-mode-option {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+/* Hide the native radio button — the styled <span> acts as the control */
+.search-mode-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.search-mode-option span {
+    display: block;
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--text-sm);
+    font-family: var(--font-secondary);
+    font-weight: var(--font-weight-semibold);
+    border-radius: calc(var(--radius-sm) - 2px);
+    color: var(--color-text-muted);
+    transition: background var(--transition-fast), color var(--transition-fast);
+    user-select: none;
+    white-space: nowrap;
+}
+
+/* Active tab: lift with background + shadow */
+.search-mode-option input[type="radio"]:checked + span {
+    background: var(--color-surface);
+    color: var(--color-text);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.10);
+}
+
+.search-mode-option:hover input[type="radio"]:not(:checked) + span {
+    color: var(--color-text);
+}
+
+/* Keyboard focus ring on the hidden radio — shown on the visible span */
+.search-mode-option input[type="radio"]:focus-visible + span {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
+}
+
+/* ── Search mode panels ───────────────────────────────────────────────────── */
+
+.search-mode-panel--hidden {
+    display: none;
+}

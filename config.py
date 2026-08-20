@@ -5,7 +5,7 @@ COURSE_DETAIL_URL = 'https://eservices.minnstate.edu/registration/search/detail.
 # Define the source URL for the course data
 COURSE_DATA_SOURCE_URL = 'https://eservices.minnstate.edu/registration/search/basic.html?campusid=072'
 
-# Define the directory where cached CSV files will be stored for 
+# Define the directory where cached CSV files will be stored for
 # possible download
 CACHE_DIR = 'viewed-csvs'
 
@@ -13,8 +13,8 @@ CACHE_DIR = 'viewed-csvs'
 PARQUET_DATA = 'all_enrollments.parquet'
 
 ##
-## These constants are used to set up the data import process
-## in update_data_table.py
+# These constants are used to set up the data import process
+# in update_data_table.py
 ##
 
 # Define path to CSV file for export (must be same as PARQUET_DATA but with
@@ -24,9 +24,34 @@ CSV_DATA = 'all_enrollments.csv'
 # Define the directory where the scraped data will be stored.
 SCRAPE_DIR = 'data/'
 
-# Define the directory where setup files are stored defining colleges at 
-# MSUM
-SETUP_DIR = 'assets/'
+# Maps course subject rubrics to their college code.
+# College codes:
+#   CBAC — Business, Analytics & Communication
+#   COAH — Arts & Humanities
+#   CSHE — Science, Health, & the Environment
+#   CEHS — Education & Human Services
+#   NONE — No college (honors, exchange, library, etc.)
+RUBRIC_TO_COLLEGE = {
+    'ACCT': 'CBAC', 'AMCS': 'COAH', 'ANIM': 'COAH', 'ANTH': 'CSHE',
+    'ART':  'COAH', 'AST':  'CSHE', 'AT':   'CSHE', 'ATHL': 'CSHE',
+    'BCBT': 'CSHE', 'BIOL': 'CSHE', 'BUS':  'CBAC', 'CHEM': 'CSHE',
+    'CHIN': 'COAH', 'CJ':   'CEHS', 'CM':   'CBAC', 'CNSA': 'CEHS',
+    'COMM': 'CBAC', 'COUN': 'CEHS', 'CSIS': 'CBAC', 'ECON': 'CBAC',
+    'ED':   'CEHS', 'EECE': 'CEHS', 'EIT':  'COAH', 'ENG':  'CSHE',
+    'ENGL': 'COAH', 'ENTR': 'CBAC', 'EXCH': 'NONE', 'EXS':  'CSHE',
+    'FILM': 'COAH', 'FINC': 'CBAC', 'FYE':  'NONE', 'GCOM': 'COAH',
+    'GDES': 'COAH', 'GEOS': 'CSHE', 'GID':  'COAH', 'HIST': 'COAH',
+    'HLTH': 'CSHE', 'HON':  'NONE', 'HSAD': 'CSHE', 'HUM':  'COAH',
+    'INTL': 'CBAC', 'JAPN': 'COAH', 'LANG': 'COAH', 'LEAD': 'CBAC',
+    'LIB':  'NONE', 'MATH': 'CBAC', 'MBA':  'CBAC', 'MGMT': 'CBAC',
+    'MHA':  'CSHE', 'MKTG': 'CBAC', 'MUS':  'COAH', 'NURS': 'CSHE',
+    'OM':   'CBAC', 'PARA': 'CBAC', 'PE':   'CSHE', 'PHIL': 'COAH',
+    'PHO':  'COAH', 'PHYS': 'CSHE', 'PMGT': 'CBAC', 'POL':  'CBAC',
+    'PSCI': 'CSHE', 'PSY':  'CSHE', 'SLHS': 'CEHS', 'SLP':  'CEHS',
+    'SOC':  'CEHS', 'SPAN': 'COAH', 'SPED': 'CEHS', 'STL':  'CEHS',
+    'SUST': 'CSHE', 'SW':   'CEHS', 'TEFL': 'COAH', 'TESL': 'COAH',
+    'THTR': 'COAH', 'UNIV': 'NONE', 'WS':   'COAH',
+}
 
 # Define the directory where backup files are stored
 BACKUP_DIR = 'backups/'

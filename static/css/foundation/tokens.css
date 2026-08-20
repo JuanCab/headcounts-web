@@ -1,0 +1,86 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap");
+
+:root {
+    /* ── Fonts ───────────────────────────────────────────────────────────── */
+    --font-primary: "Public Sans", "IBM Plex Sans", sans-serif;
+    --font-secondary: "IBM Plex Sans", "Public Sans", sans-serif;
+    --font-formula: "Courier New", Courier, monospace;
+
+    /* ── Colors ──────────────────────────────────────────────────────────── */
+    --color-bg: #f8f9fa;
+    --color-bg-soft: #ffffff;
+    --color-surface: #ffffff;
+    --color-surface-muted: #f7f9fc;
+    --color-border: #d6dde6;
+    --color-text: #162033;
+    --color-text-muted: #5a687a;
+    --color-accent: #c8102e;
+    --color-accent-strong: #9e0b23;
+    --color-accent-soft: #fce8eb;
+    --color-gold: #e8b800;
+    --color-success: #1f6d3d;
+    --color-success-soft: #e7f3ea;
+    --color-warning: #8a5a17;
+    --color-warning-soft: #fbf2e3;
+    --color-error: #9c2f2f;
+    --color-error-soft: #faecec;
+    --color-info: #1c5f8c;
+    --color-info-soft: #e7f1f8;
+
+    /* ── Table pivot colors ──────────────────────────────────────────────── */
+    --color-table-sub: #e8eef8;            /* sub-header row bg */
+    --color-table-sub-avg: #dbeafe;        /* sub-header avg column bg */
+    --color-table-avg: #fffbeb;            /* avg column cell highlight */
+    --color-table-section: #dde4f0;        /* section header row bg */
+    --color-table-section-border: #b8c8df; /* section header bottom border */
+
+    /* ── Elevation ───────────────────────────────────────────────────────── */
+    --shadow-sm: 0 6px 18px rgba(22, 32, 51, 0.05);
+    --shadow-md: 0 12px 26px rgba(22, 32, 51, 0.08);
+
+    /* ── Shape ───────────────────────────────────────────────────────────── */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+
+    /* ── Spacing ─────────────────────────────────────────────────────────── */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-7: 28px;
+    --space-8: 32px;
+
+    /* ── Typography ──────────────────────────────────────────────────────── */
+    --line-default: 1.5;
+    --line-title: 1.25;
+
+    /* ── Font Weights ────────────────────────────────────────────────────── */
+    --font-weight-regular: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+
+    /* ── Font Sizes ────────────────────────────────────────────────────── */
+    --text-xxs: 0.625rem;    /* 10px */
+    --text-xs: 0.75rem;     /* 12px */
+    --text-sm: 0.875rem;    /* 14px */
+    --text-base: 1rem;      /* 16px */
+    --text-lg: 1.125rem;    /* 18px */
+    --text-xl: 1.25rem;     /* 20px */
+    --text-2xl: 1.5rem;     /* 24px */
+    --text-3xl: 1.875rem;   /* 30px */
+    --text-4xl: 2.25rem;    /* 36px */
+
+    /* ── Line Heights ────────────────────────────────────────────────────── */
+    --line-xs: 1.25;   /* for text-xs */
+    --line-sm: 1.4;    /* for text-sm */
+    --line-base: 1.5;  /* for text-base */
+    --line-lg: 1.75;   /* for text-lg and above */
+
+    /* ── Transitions ─────────────────────────────────────────────────────── */
+    --transition-fast: 120ms ease;
+    --transition-base: 180ms ease;
+}

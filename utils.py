@@ -3,10 +3,22 @@ from pathlib import Path
 
 from config import CACHE_DIR, COURSE_DETAIL_URL, DEFAULT_TERM
 from flask import render_template
-from great_tables import GT, html, loc, style
-import numpy as np
 import polars as pl
 import os
+
+# Pre-compiled once; used by _display_text and _search_rows below.
+_HTML_RE = re.compile(r'<[^>]+>')
+
+
+def _display_text(cell):
+    """Return the visible text of a display cell — HTML stripped, lowercased."""
+    return _HTML_RE.sub('', str(cell)).strip().lower() if cell is not None else ''
+
+
+def _search_rows(display_rows, search_value):
+    """Return a bool mask of display_rows whose visible text contains search_value."""
+    sv = search_value.lower()
+    return [any(sv in _display_text(c) for c in row) for row in display_rows]
 
 #
 # This is an importable file of utility functions for the Flask app.
@@ -15,6 +27,7 @@ import os
 # are used by those two functions to do the actual work of filtering
 # the data and calculating various statistics.
 #
+
 
 def filter_data(tbl, subject, spec1=None, spec2=None):
     """
@@ -66,7 +79,7 @@ def filter_data(tbl, subject, spec1=None, spec2=None):
     """
 
     # MSUM Colleges
-    MSUM_COLLEGES = [ 'cbac', 'coah', 'cshe', 'cehs', 'none' ]
+    MSUM_COLLEGES = ['cbac', 'coah', 'cshe', 'cehs', 'none']
 
     # Set the subject description string to the upper case version
     # of the subject, but then make sure to convert the subject
@@ -77,11 +90,11 @@ def filter_data(tbl, subject, spec1=None, spec2=None):
     # Determine the subject category and filter accordingly
     if subject in MSUM_COLLEGES:
         # If the subject is a college code, filter by that college
-        filtered_table = tbl.filter(pl.col('College')== subject.upper())
+        filtered_table = tbl.filter(pl.col('College') == subject.upper())
     elif subject == 'lasc':
         filtered_table = tbl.filter(
             (pl.col("LASC/WI").is_not_null()) & (pl.col("LASC/WI") != "WI")
-            )
+        )
     elif subject == 'wi':
         filtered_table = tbl.filter(pl.col("LASC/WI").str.contains("WI"))
     elif subject == '18online':
@@ -104,8 +117,8 @@ def filter_data(tbl, subject, spec1=None, spec2=None):
     if subject == 'any' and spec1:
         spec1_lower = spec1.lower()
         # Check if spec1 is a course number (not a term, not lasc/wi)
-        if (not (len(spec1_lower) == 5 and spec1_lower[-1] in ['1', '3', '5']) 
-            and spec1_lower not in ['lasc', 'wi']):
+        if (not (len(spec1_lower) == 5 and spec1_lower[-1] in ['1', '3', '5'])
+                and spec1_lower not in ['lasc', 'wi']):
             # spec1 is the course number to search across all subjects
             if spec1_lower[-1] == '_':
                 # Wildcard course number
@@ -149,7 +162,7 @@ def filter_data(tbl, subject, spec1=None, spec2=None):
             if len(spec) == 5 and spec[-1] in ['1', '3', '5']:
                 filtered_table = filtered_table.filter(
                     pl.col('Fiscal yrtr') == int(spec)
-                    )
+                )
             # 2) Handle Course Prefix specifiers
             elif (re.match('[a-z]{2,4}', spec) and spec not in ['lasc', 'wi']):
                 filtered_table = filtered_table.filter(
@@ -157,12 +170,12 @@ def filter_data(tbl, subject, spec1=None, spec2=None):
                 )
                 subj_text = f"{subj_text} {spec}"
             elif subject == 'lasc':
-                    # If the subject is 'lasc', filter by LASC/WI value
-                    # which is expected to be uppercase (eg. 1A)
-                    filtered_table = filtered_table.filter(
-                        pl.col('LASC/WI').str.contains(spec.upper())
-                    )
-                    subj_text = f"{subj_text} {spec.upper()}"
+                # If the subject is 'lasc', filter by LASC/WI value
+                # which is expected to be uppercase (eg. 1A)
+                filtered_table = filtered_table.filter(
+                    pl.col('LASC/WI').str.contains(spec.upper())
+                )
+                subj_text = f"{subj_text} {spec.upper()}"
             else:
                 # Otherwise, filter by course number
 
@@ -175,12 +188,11 @@ def filter_data(tbl, subject, spec1=None, spec2=None):
                         pl.col('#').str.starts_with(numcode.upper())
                     )
                     subj_text = f"{subj_text} {numcode.upper()} (Any Variant)"
-                else: # Exact match of course number/letter
+                else:  # Exact match of course number/letter
                     filtered_table = filtered_table.filter(
                         pl.col('#') == spec.upper()
                     )
                     subj_text = f"{subj_text} {spec.upper()}"
-
 
     # Always sort the output by Fiscal yrtr, Subj, #, and section
     filtered_table = filtered_table.sort(
@@ -392,7 +404,8 @@ def generate_datafiles(table, path, subj_text, dir=CACHE_DIR):
     # Compute the average time for all courses in the dataframe based
     # on the "Last Updated" column and format it as a string
     # representation of the average time in the format YYYYMMDD-HHMMSS.
-    avg_time = table.select(pl.col('Last Updated')).mean().item().strftime("%Y%m%d-%H%M%S")
+    avg_time = table.select(pl.col('Last Updated')
+                            ).mean().item().strftime("%Y%m%d-%H%M%S")
 
     # Fix "Last Updated" column to be a datetime column without the
     # timezone information, so it can be written to the CSV and Excel
@@ -405,7 +418,8 @@ def generate_datafiles(table, path, subj_text, dir=CACHE_DIR):
     )
 
     # Use a sanitized version of subj_text for the filename
-    safe_subj_text = sanitize_excel_sheetname(subj_text).replace(" ", "_").replace("\n", "_")
+    safe_subj_text = sanitize_excel_sheetname(
+        subj_text).replace(" ", "_").replace("\n", "_")
     # Optionally, you can further clean up the string if needed
 
     # Compose the filename
@@ -422,11 +436,65 @@ def generate_datafiles(table, path, subj_text, dir=CACHE_DIR):
     # Define formatting and other information for the Excel file
     excel_file = f"{filename_base}.xlsx"
     excel_path = Path(CACHE_DIR) / excel_file
-    table.write_excel(excel_path, worksheet=sanitize_excel_sheetname(subj_text))
+    if not excel_path.is_file():
+        table.write_excel(
+            excel_path, worksheet=sanitize_excel_sheetname(subj_text))
 
     # Return the names of the files
     return csv_file, excel_file
 
+
+def _build_display_table(render_me):
+    """
+    Apply all display transformations to a collected Polars DataFrame and
+    return (columns, rows) ready for DataTables — either HTML rendering or
+    JSON serialization.
+    """
+    # Rename fiscal year/term to an internal name so it doesn't appear as a
+    # display column but is still accessible for building course ID links.
+    render_me = render_me.rename({'Fiscal yrtr': 'year_term'})
+
+    # Format money columns as "$X,XXX.XX" strings
+    money_cols = ['Tuition Resident', 'Tuition Non-Resident',
+                  'Approximate Course Fees', 'Book Cost']
+    render_me = render_me.with_columns([
+        pl.col(col)
+        .map_elements(lambda x: f"${x:,.2f}" if x is not None else None, return_dtype=pl.Utf8)
+        .alias(col)
+        for col in money_cols
+    ])
+
+    # Format the Last Updated timestamp as a readable string
+    render_me = render_me.with_columns(
+        pl.col('Last Updated').dt.strftime(
+            '%Y-%m-%d %H:%M:%S').alias('Last Updated')
+    )
+
+    # Build an HTML anchor link for each course ID using the MinnState detail
+    # URL. The ID is zero-padded to 6 digits to match what MinnState expects.
+    fmt_string = "<a href='" + COURSE_DETAIL_URL + "'>{course_id}</a>"
+    cleaned_fmt_string = re.sub(r"\{[^}]*\}", "{}", fmt_string)
+
+    render_me = render_me.with_columns([
+        pl.col("ID #").cast(pl.Int64).map_elements(lambda x: f"{x:06}",
+                                                   return_dtype=pl.String).alias("course_id_str")
+    ])
+    render_me = render_me.with_columns(
+        pl.format(cleaned_fmt_string,
+                  pl.col('course_id_str'),
+                  pl.col('year_term'),
+                  pl.col('course_id_str')).alias("ID #")
+    ).drop('course_id_str')
+
+    # Drop internal columns and collect rows as plain Python lists for DataTables
+    cols_to_exclude = {'year_term'}
+    display_columns = [
+        c for c in render_me.columns if c not in cols_to_exclude]
+    rows = [
+        list('' if v is None else v for v in row)
+        for row in render_me.select(display_columns).rows()
+    ]
+    return display_columns, rows
 
 
 def process_data_request(render_me, path, subj_text):
@@ -462,7 +530,8 @@ def process_data_request(render_me, path, subj_text):
 
     # Check for an empty DataFrame, if so, return a custom response
     if render_me.is_empty():
-        return render_template('results.html', subject=subj_text, n_rows=0)
+        return render_template('results.html', subject=subj_text, n_rows=0,
+                               data_url='/data' + path)
 
     # Determine all the unique 'Term' in this polars Dataframe, sorted
     # by Fiscal year/term,
@@ -499,81 +568,26 @@ def process_data_request(render_me, path, subj_text):
 
     # Generate the CSV file corresponding to this data using full
     # dataset
-    csv_filename, excel_filename = generate_datafiles(render_me, path, subj_text)
+    csv_filename, excel_filename = generate_datafiles(
+        render_me, path, subj_text)
 
     # Compute various statistics for the table
     stu_credit_hours = calc_sch(render_me)
     seats = calc_seats(render_me)
     calulcated_tuition = calc_tuition(render_me)
 
-    #
-    # Modify the table to be rendered in the template
-    #
+    # Get column names cheaply — no need to build formatted rows here since
+    # the table is populated via Ajax by the /data/ endpoint.
+    _display = render_me.rename({'Fiscal yrtr': 'year_term'})
+    columns = [c for c in _display.columns if c != 'year_term']
+    n_rows = len(render_me)
+    data_url = '/data' + path
 
-    # If the table is larger than max_rows rows, only render the first max_rows
-    # rows to avoid performance issues in the browser.
-    max_rows = 300
-    n_rows = render_me.height
-    if render_me.height > max_rows:
-        render_me = render_me.head(max_rows)
-
-    # Rename the 'Fiscal yrtr' column to 'year_term' for clarity
-    render_me = render_me.rename({'Fiscal yrtr': 'year_term'})
-
-    # Convert all the columns with money values to strings with
-    # dollar signs and commas for thousands.
-    money_cols = [ 'Tuition Resident', 'Tuition Non-Resident',
-                  'Approximate Course Fees', 'Book Cost',]
-    render_me = render_me.with_columns([
-        pl.col(col)
-        .map_elements(lambda x: f"${x:,.2f}" if x is not None else None, return_dtype=pl.Utf8)
-        .alias(col)
-        for col in money_cols
-    ])
-
-    # Convert the 'Last Updated' column to a string representation
-    render_me = render_me.with_columns(
-        pl.col('Last Updated').dt.strftime('%Y-%m-%d %H:%M:%S').alias('Last Updated')
-    )
-
-    # Convert the ID # column to HTML links to the course detail
-    # page, using the COURSE_DETAIL_URL defined in config.py.
-    COURSE_DETAIL_URL = 'https://eservices.minnstate.edu/registration/search/detail.html?campusid=072&courseid={course_id}&yrtr={year_term}&rcid=0072&localrcid=0072&partnered=false&parent=search'
-    fmt_string = "<a href='" + COURSE_DETAIL_URL + "'>{course_id}</a>"
-    cleaned_fmt_string = re.sub(r"\{[^}]*\}", "{}", fmt_string)
-
-    # Create a formatted string version of the course ID
-    render_me_alt = render_me.with_columns([
-        pl.col("ID #").cast(pl.Int64).map_elements(lambda x: f"{x:06}",
-                                                   return_dtype=pl.String).alias("course_id_str")
-        ])
-
-    render_me_alt = render_me_alt.with_columns(
-        pl.format(cleaned_fmt_string,
-                  pl.col('course_id_str'),
-                  pl.col('year_term'),
-                  pl.col('course_id_str')
-        ).alias("ID #")
-    )
-
-    # Remove the 'course_id_str' column as it is no longer needed
-    render_me_alt = render_me_alt.drop('course_id_str')
-
-    # Render table using GreatTables
-    rendered_html = (GT(render_me_alt).tab_header(title=subj_text)
-                     .cols_hide(columns="year_term")
-                     .tab_style( style=style.text(size="14px"), locations=loc.body())
-                     .tab_style( style=style.text(size="14px", weight="bold"), locations=loc.column_labels())
-                     .opt_row_striping()
-                     .as_raw_html()
-    )
-
-    # Render the page using the 'results.html' template,
+    # Render the page using the 'results.html' template.
     return render_template('results.html',
-                           rendered_table=rendered_html,
+                           columns=columns,
                            subject=subj_text,
                            n_rows=n_rows,
-                           max_rows=max_rows,
                            oldest=oldest,
                            most_recent=most_recent,
                            sch=stu_credit_hours,
@@ -581,7 +595,7 @@ def process_data_request(render_me, path, subj_text):
                            excel_file=excel_filename,
                            seats=seats,
                            revenue=calulcated_tuition,
-                           base_detail_url=COURSE_DETAIL_URL)
+                           data_url=data_url)
 
 
 def get_secret_key():
@@ -612,7 +626,8 @@ def get_secret_key():
         with open(".flask_secret_key") as f:
             return f.read().strip()
     except FileNotFoundError:
-        raise RuntimeError("SECRET_KEY not set and .flask_secret_key file not found!")
+        raise RuntimeError(
+            "SECRET_KEY not set and .flask_secret_key file not found!")
 
 
 def build_url(form):
@@ -662,7 +677,7 @@ def build_url(form):
         # Add term if specified (always include it for 'any' searches)
         if term:
             parts.append(term)
-        print ("Generated URL parts:", "/" + "/".join(parts))
+        print("Generated URL parts:", "/" + "/".join(parts))
         return "/" + "/".join(parts)
 
     # Add subject_or_college or course_type
@@ -675,7 +690,8 @@ def build_url(form):
     #    subject/college is selected, otherwise include it.
     if term:
         if not (
-            term == upcoming_term and (subject_or_college and subject_or_college != "all")
+            term == upcoming_term and (
+                subject_or_college and subject_or_college != "all")
         ):
             parts.append(term)
 
@@ -687,7 +703,7 @@ def build_url(form):
 
 
 ###
-### Kept for future enhancements
+# Kept for future enhancements
 ###
 def filter_data_advanced(tbl, **filters):
     """
@@ -702,10 +718,12 @@ def filter_data_advanced(tbl, **filters):
     if subj_col:
         subj_col_upper = subj_col.upper()
         if subj_col_upper in ['CBAC', 'COAH', 'CSHE', 'CEHS', 'NONE']:
-            filtered_table = filtered_table.filter(pl.col('College') == subj_col_upper)
+            filtered_table = filtered_table.filter(
+                pl.col('College') == subj_col_upper)
             filter_descriptions.append(f"College: {subj_col_upper}")
         else:
-            filtered_table = filtered_table.filter(pl.col('Subj') == subj_col_upper)
+            filtered_table = filtered_table.filter(
+                pl.col('Subj') == subj_col_upper)
             filter_descriptions.append(f"Subject: {subj_col_upper}")
 
     # Course Type
@@ -719,10 +737,12 @@ def filter_data_advanced(tbl, **filters):
                 filter_descriptions.append("LASC Courses")
             else:
                 lasc_area = course_type.split('/')[-1].upper()
-                filtered_table = filtered_table.filter(pl.col('LASC/WI').str.contains(lasc_area))
+                filtered_table = filtered_table.filter(
+                    pl.col('LASC/WI').str.contains(lasc_area))
                 filter_descriptions.append(f"LASC Area: {lasc_area}")
         elif course_type == 'wi':
-            filtered_table = filtered_table.filter(pl.col("LASC/WI").str.contains("WI"))
+            filtered_table = filtered_table.filter(
+                pl.col("LASC/WI").str.contains("WI"))
             filter_descriptions.append("Writing Intensive (WI)")
         elif course_type == '18':
             filtered_table = filtered_table.filter(pl.col('18online') == True)
@@ -749,7 +769,8 @@ def filter_data_advanced(tbl, **filters):
         elif year != "%" and semester == "_":
             # Full Academic Term, summer-fall-spring
             year_int = int(year)
-            terms = [str(year_int) + "1", str(year_int) + "3", str(year_int) + "5"]
+            terms = [str(year_int) + "1", str(year_int) +
+                     "3", str(year_int) + "5"]
             filtered_table = filtered_table.filter(
                 pl.col('Fiscal yrtr').is_in([int(t) for t in terms])
             )
@@ -760,7 +781,8 @@ def filter_data_advanced(tbl, **filters):
             if semester == "Spring":
                 year_int -= 1
             term_code = str(year_int) + sem_digit
-            filtered_table = filtered_table.filter(pl.col('Fiscal yrtr') == int(term_code))
+            filtered_table = filtered_table.filter(
+                pl.col('Fiscal yrtr') == int(term_code))
         elif year == "%" and semester == "_":
             pass
 
@@ -768,7 +790,8 @@ def filter_data_advanced(tbl, **filters):
         by=['Fiscal yrtr', 'Subj', '#', 'Sec'],
         descending=[False, False, False, False]
     )
-    subj_text = " | ".join(filter_descriptions) if filter_descriptions else "All Courses"
+    subj_text = " | ".join(
+        filter_descriptions) if filter_descriptions else "All Courses"
     return filtered_table, subj_text
 
 
@@ -779,3 +802,203 @@ def sanitize_excel_sheetname(name):
     invalid = r'[:\\/?*\[\]]'
     name = re.sub(invalid, '', name)
     return name[:31]
+
+
+# College code to full name mapping used on the analytics page
+COLLEGE_LABELS = {
+    'CBAC': 'Business, Analytics & Comm.',
+    'COAH': 'Arts & Humanities',
+    'CSHE': 'Science, Health & Env.',
+    'CEHS': 'Education & Human Services',
+    'NONE': 'Other',
+}
+
+
+def get_analytics_data(table, current_term=None):
+    """
+    Compute aggregated data for the analytics/overview page.
+
+    Parameters
+    ----------
+    table : polars DataFrame
+        The full enrollment dataset (not filtered).
+    current_term : int, optional
+        The fiscal year/term code to use as "current". Defaults to DEFAULT_TERM[0].
+
+    Returns
+    -------
+    dict
+        A JSON-serializable dict with all data needed by Chart.js on
+        the analytics template.
+    """
+    if current_term is None:
+        current_term = DEFAULT_TERM[0]
+
+    # Precompute integer credits and SCH per row so we can sum them
+    # in group_by aggregations without a separate pass.
+    tbl = table.with_columns(
+        filled_credits(table['Credits']).alias('IntCrd')
+    ).with_columns(
+        (pl.col('Enrolled') * pl.col('IntCrd')).alias('_sch')
+    )
+
+    # --- Enrollment + SCH + section counts by term ---
+    by_term = (
+        tbl
+        .group_by(['Fiscal yrtr', 'Term'])
+        .agg([
+            pl.col('Enrolled').sum().alias('enrollment'),
+            pl.col('_sch').sum().alias('sch'),
+            pl.len().alias('sections'),
+            (pl.col('Status') == 'Cancelled').sum().alias('cancelled'),
+        ])
+        .sort('Fiscal yrtr')
+    )
+
+    # --- Current term slice ---
+    current = tbl.filter(pl.col('Fiscal yrtr') == current_term)
+    term_name_df = current.select('Term').unique()
+    current_term_name = term_name_df.item() if len(
+        term_name_df) == 1 else str(current_term)
+
+    current_active = current.filter(pl.col('Status') != 'Cancelled')
+
+    # --- Summary stats for current term ---
+    total_enrolled = int(current_active['Enrolled'].sum(
+    )) if not current_active.is_empty() else 0
+    total_sch = int(current_active['_sch'].sum()
+                    ) if not current_active.is_empty() else 0
+    total_sections = len(current)
+    active_sections = len(current_active)
+    seats = calc_seats(current_active) if not current_active.is_empty() else {
+        'empty': 0, 'filled': 0, 'available': 0}
+    seat_fill_pct = round(
+        100 * seats['filled'] / seats['available'], 1) if seats['available'] else 0
+
+    # --- College breakdown for current term ---
+    by_college = (
+        current_active
+        .with_columns(pl.col('College').fill_null('NONE'))
+        .group_by('College')
+        .agg([
+            pl.col('Enrolled').sum().alias('enrollment'),
+            pl.col('Size').sum().alias('capacity'),
+        ])
+        .sort('enrollment', descending=True)
+    )
+
+    # --- Top 10 courses by total enrollment for current term ---
+    top_courses = (
+        current_active
+        .group_by(['Subj', '#', 'Title'])
+        .agg(pl.col('Enrolled').sum().alias('enrollment'))
+        .sort('enrollment', descending=True)
+        .head(10)
+    )
+
+    # --- Delivery method breakdown ---
+    delivery = (
+        current_active
+        .with_columns(pl.col('Delivery Method').fill_null('On Campus'))
+        .group_by('Delivery Method')
+        .agg(pl.col('Enrolled').sum().alias('enrollment'))
+        .sort('enrollment', descending=True)
+    )
+
+    # --- LASC area distribution (top 12 by enrollment) ---
+    lasc = (
+        current_active
+        .filter(pl.col('LASC/WI').is_not_null())
+        .group_by('LASC/WI')
+        .agg(pl.col('Enrolled').sum().alias('enrollment'))
+        .sort('enrollment', descending=True)
+        .head(12)
+    )
+
+    # Collect the per-group aggregations to plain dicts for JSON serialization
+    college_rows = by_college.to_dicts()
+    top_rows = top_courses.to_dicts()
+
+    # --- SCH by college (current term) ---
+    sch_college = (
+        current_active
+        .with_columns(pl.col('College').fill_null('NONE'))
+        .group_by('College')
+        .agg(pl.col('_sch').sum().alias('sch'))
+        .sort('sch', descending=True)
+    ) if not current_active.is_empty() else pl.DataFrame({'College': [], 'sch': []})
+    sch_college_rows = sch_college.to_dicts()
+
+    # --- Sections by credit count (current term) ---
+    credits_dist = (
+        current_active
+        .with_columns(filled_credits(current_active['Credits']).alias('IntCrd'))
+        .group_by('IntCrd')
+        .agg(pl.len().alias('sections'))
+        .sort('IntCrd')
+    ) if not current_active.is_empty() else pl.DataFrame({'IntCrd': [], 'sections': []})
+    credits_rows = credits_dist.to_dicts()
+
+    # --- Cancelled sections by college (current term) ---
+    cancelled_curr = current.filter(pl.col('Status') == 'Cancelled')
+    if not cancelled_curr.is_empty():
+        canc_by_college = (
+            cancelled_curr
+            .with_columns(pl.col('College').fill_null('NONE'))
+            .group_by('College')
+            .agg(pl.len().alias('cancelled'))
+            .sort('cancelled', descending=True)
+        )
+        canc_rows = canc_by_college.to_dicts()
+    else:
+        canc_rows = []
+
+    # Assemble and return the full response dict — everything the analytics template needs
+    return {
+        'current_term_name': current_term_name,
+        'current_term_code': current_term,
+        'summary': {
+            'total_sections': total_sections,
+            'active_sections': active_sections,
+            'total_enrolled': total_enrolled,
+            'sch': total_sch,
+            'seat_fill_pct': seat_fill_pct,
+            'seats_available': int(seats['available']),
+        },
+        'enrollment_by_term': {
+            'labels': by_term['Term'].to_list(),
+            'enrollment': [int(x) for x in by_term['enrollment'].to_list()],
+            'sch': [int(x) for x in by_term['sch'].to_list()],
+            'cancelled': [int(x) for x in by_term['cancelled'].to_list()],
+        },
+        'college_breakdown': {
+            'labels': [COLLEGE_LABELS.get(r['College'], r['College']) for r in college_rows],
+            'enrollment': [int(r['enrollment']) for r in college_rows],
+            'capacity': [int(r['capacity']) for r in college_rows],
+        },
+        'top_courses': {
+            'labels': [r['Subj'] + ' ' + r['#'] for r in top_rows],
+            'titles': [r['Title'] for r in top_rows],
+            'enrollment': [int(r['enrollment']) for r in top_rows],
+        },
+        'delivery_breakdown': {
+            'labels': delivery['Delivery Method'].to_list(),
+            'enrollment': [int(x) for x in delivery['enrollment'].to_list()],
+        },
+        'lasc_breakdown': {
+            'labels': lasc['LASC/WI'].to_list(),
+            'enrollment': [int(x) for x in lasc['enrollment'].to_list()],
+        },
+        'sch_by_college': {
+            'labels': [COLLEGE_LABELS.get(r['College'], r['College']) for r in sch_college_rows],
+            'sch': [int(r['sch']) for r in sch_college_rows],
+        },
+        'credits_distribution': {
+            'labels': [str(r['IntCrd']) + ' cr.' for r in credits_rows],
+            'sections': [int(r['sections']) for r in credits_rows],
+        },
+        'cancelled_by_college': {
+            'labels': [COLLEGE_LABELS.get(r['College'], r['College']) for r in canc_rows],
+            'cancelled': [int(r['cancelled']) for r in canc_rows],
+        },
+    }

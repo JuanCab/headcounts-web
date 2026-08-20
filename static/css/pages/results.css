@@ -1,0 +1,55 @@
+/* ── Results page ────────────────────────────────────────────────────────── */
+
+.results-layout {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    align-items: flex-start;
+    margin-bottom: var(--space-5);
+}
+
+.results-info {
+    flex: 1;
+    min-width: 260px;
+}
+
+.results-actions {
+    flex-shrink: 0;
+}
+
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+
+.empty-state {
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-muted);
+    padding: var(--space-6);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.empty-state h3 {
+    margin: 0;
+    font-size: var(--text-base);
+}
+
+.empty-state p {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-family: var(--font-secondary);
+    max-width: 400px;
+}
+
+/* ── Download divider ────────────────────────────────────────────────────── */
+
+.download-divider {
+    display: flex;
+    align-items: center;
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    padding: 0 var(--space-1);
+}
+

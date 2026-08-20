@@ -1,0 +1,115 @@
+/* ── Base — structure, typography, and shared behaviour ───────────────── */
+
+.button {
+    display: inline-block;
+    border: 1px solid transparent; /* Default to transparent so layout doesn't jump */
+    border-radius: var(--radius-sm);
+    padding: var(--space-3) var(--space-4);
+    font-family: var(--font-primary);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none; /* Important if applied to <a> tags */
+    transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.button:disabled {
+    border-color: var(--color-border) !important;
+    background: var(--color-surface-muted) !important;
+    color: var(--color-text-muted) !important;
+    cursor: not-allowed;
+}
+
+/* ── Variants — colors and borders only ─────────────────────────────────── */
+
+.button-primary {
+    border-color: var(--color-accent-strong);
+    background: var(--color-accent);
+    color: var(--color-surface);
+}
+.button-primary:hover:not(:disabled),
+.button-primary:focus-visible:not(:disabled) {
+    border-color: var(--color-accent-strong);
+    background: var(--color-accent-strong);
+}
+
+.button-secondary {
+    border-color: var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text);
+}
+.button-secondary:hover:not(:disabled),
+.button-secondary:focus-visible:not(:disabled) {
+    border-color: var(--color-accent);
+    background: var(--color-accent-soft);
+}
+
+.button-ghost {
+    background: transparent;
+    color: var(--color-accent-strong);
+}
+.button-ghost:hover:not(:disabled),
+.button-ghost:focus-visible:not(:disabled) {
+    border-color: var(--color-border);
+    background: var(--color-surface-muted);
+}
+
+.button-danger {
+    border-color: color-mix(in srgb, var(--color-error) 80%, black 20%);
+    background: var(--color-error);
+    color: var(--color-surface); 
+}
+.button-danger:hover:not(:disabled),
+.button-danger:focus-visible:not(:disabled) {
+    background: color-mix(in srgb, var(--color-error) 85%, black 15%);
+    border-color: color-mix(in srgb, var(--color-error) 65%, black 35%);
+}
+
+.button-danger-ghost {
+    background: transparent;
+    color: var(--color-error);
+}
+.button-danger-ghost:hover:not(:disabled),
+.button-danger-ghost:focus-visible:not(:disabled) {
+    border-color: var(--color-error);
+    background: var(--color-error-soft);
+}
+
+/* Size modifier — use alongside any .button-* class */
+.button--sm {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-sm);
+}
+.button--xs {
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--text-xs);
+}
+
+/* Full-width modifier */
+
+.button--full {
+    display: block;
+    width: 100%;
+}
+
+
+/* ── Microsoft brand button ─────────────────────────────────────────────── */
+
+.button-microsoft {
+    border-color: #8c8c8c; /* Official MS border gray */
+    background: #ffffff;
+    color: #5e5e5e;        /* Official MS text gray */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    font-weight: var(--font-weight-semibold);
+}
+
+.button-microsoft:hover:not(:disabled),
+.button-microsoft:focus-visible:not(:disabled) {
+    background: #f3f2f1;   /* Official MS hover state */
+    border-color: #8c8c8c;
+    color: #323130;        /* Darkens slightly on hover */
+}

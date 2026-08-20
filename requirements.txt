@@ -1,33 +1,20 @@
-babel==2.17.0
-beautifulsoup4==4.14.3
-blinker==1.9.0
-click==8.2.1
-commonmark==0.9.1
-dominate==2.9.1
-faicons==0.2.2
-Flask==3.1.1
-Flask-Bootstrap==3.3.7.1
-Flask-WTF==1.2.2
-great-tables==0.17.0
-gunicorn==23.0.0
-htmltools==0.6.0
-importlib_metadata==8.7.0
-importlib_resources==6.5.2
-itsdangerous==2.2.0
-Jinja2==3.1.6
-lxml==6.0.2
-MarkupSafe==3.0.2
-mccabe==0.7.0
-mypy_extensions==1.1.0
-numpy==2.3.1
-packaging==25.0
-pathspec==0.12.1
-platformdirs==4.3.8
-polars-lts-cpu==1.31.0
-requests==2.32.3
-typing_extensions==4.14.1
-visitor==0.1.3
-Werkzeug==3.1.3
-WTForms==3.2.1
-xlsxwriter==3.2.5
-zipp==3.23.0
+beautifulsoup4==4.14.3 # For parsing HTML content, used in web scraping or processing HTML responses
+blinker==1.9.0 # For Flask's signal support, allowing decoupled applications to communicate
+click==8.2.1 # For creating command-line interfaces, used by Flask's CLI commands
+Flask==3.1.1 # The main web framework for building the application
+Flask-WTF==1.2.2 # For integrating WTForms with Flask, providing form handling and validation
+gunicorn==23.0.0 # A WSGI HTTP server for running the Flask application in production
+importlib_metadata==8.7.0 # For accessing metadata of installed packages
+importlib_resources==6.5.2 # For accessing resources within Python packages
+itsdangerous==2.2.0 # For securely signing data, used by Flask for session management
+Jinja2==3.1.6 # For templating in Flask, allowing dynamic HTML generation
+lxml==6.0.2 # For parsing and manipulating XML and HTML documents
+MarkupSafe==3.0.2 # For escaping text in Jinja2 templates to prevent XSS
+packaging==25.0 # For parsing and handling package versions
+polars-lts-cpu==1.31.0 # For fast DataFrame operations, similar to pandas
+requests==2.32.3 # For making HTTP requests
+typing_extensions==4.14.1 # For backporting new type hints to older Python versions
+Werkzeug==3.1.3 # For WSGI utilities and request/response handling in Flask
+WTForms==3.2.1 # For form handling and validation in Flask
+xlsxwriter==3.2.5 # For creating Excel files
+zipp==3.23.0 # For backporting the zipfile module to older Python versions

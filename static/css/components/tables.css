@@ -1,0 +1,231 @@
+/* ── Base Table Styles ──────────────────────── */
+
+.table {
+    width: 100%;
+    background: var(--color-surface);
+    border-collapse: collapse;
+}
+
+.table th,
+.table td {
+    text-align: left;
+    padding: var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+    border-right: 1px solid var(--color-border);
+}
+
+.table th:last-child,
+.table td:last-child {
+    border-right: none;
+}
+
+.table tr:last-child td {
+    border-bottom: none;
+}
+
+.table th {
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    background: var(--color-surface-muted);
+}
+
+.table-empty {
+    padding: var(--space-8) var(--space-4);
+    text-align: center;
+    color: var(--color-text-muted);
+    font-family: var(--font-secondary);
+    font-size: var(--text-sm);
+}
+
+.row--invalid td {
+    background: var(--color-error-soft);
+    color: var(--color-error);
+}
+
+/* ── Actions column ─────────────────────────────────────────────────────── */
+.td-actions {
+    width: 1%;
+    white-space: nowrap;
+    text-align: right;
+}
+
+.td-actions form {
+    display: inline;
+}
+
+/* ── DataTables.js integration (DataTables v2+) ─────────────────────────── */
+
+/* Scrollable tbody — both axes */
+.dt-scroll-body {
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    border-bottom: 1px solid var(--color-border);
+}
+
+/* Fixed header — no spurious scrollbar */
+.dt-scroll-head {
+    overflow: hidden !important;
+}
+
+.dt-container {
+    font-family: var(--font-secondary);
+    font-size: var(--text-sm);
+    color: var(--color-text);
+}
+
+table.dataTable {
+    border-collapse: collapse !important;
+    /* Do NOT force width here — DataTables sets it via inline style for scrollX */
+    font-size: var(--text-sm);
+    color: var(--color-text);
+    font-family: var(--font-secondary);
+}
+
+table.dataTable thead th,
+table.dataTable thead td {
+    background: var(--color-surface-muted) !important;
+    color: var(--color-text-muted) !important;
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--text-xs);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    border-bottom: 2px solid var(--color-border) !important;
+    padding: var(--space-3) !important;
+    white-space: nowrap;
+    position: sticky;
+    top: calc(-1 * var(--space-3));
+    z-index: 1;
+}
+
+table.dataTable tbody td {
+    padding: var(--space-2) var(--space-3) !important;
+    border-bottom: 1px solid var(--color-border) !important;
+    vertical-align: middle;
+}
+
+table.dataTable tbody tr:hover {
+    background: var(--color-surface-muted);
+}
+
+table.dataTable tbody tr:last-child td {
+    border-bottom: none !important;
+}
+
+/* DataTables Layout Rows (Top and bottom controls) */
+.dt-layout-row {
+    margin-bottom: var(--space-3);
+}
+
+.dt-layout-row:last-child {
+    margin-bottom: 0;
+    margin-top: var(--space-3);
+}
+
+/* DataTables controls (length, filter, info, pagination) */
+.dt-length label,
+.dt-search label {
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+}
+
+.dt-length select,
+.dt-search input {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: var(--space-2) var(--space-3);
+    font-family: var(--font-secondary);
+    font-size: var(--text-sm);
+    background: var(--color-surface);
+    color: var(--color-text);
+    margin: 0 var(--space-2);
+}
+
+.dt-search input:focus,
+.dt-length select:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px var(--color-accent-soft);
+}
+
+.dt-info {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+}
+
+/* Pagination */
+.dt-paging .dt-paging-button {
+    border: 1px solid var(--color-border) !important;
+    border-radius: var(--radius-sm) !important;
+    padding: var(--space-1) var(--space-3) !important;
+    margin: 0 2px !important;
+    cursor: pointer;
+    font-size: var(--text-sm) !important;
+    color: var(--color-text-muted) !important;
+    background: var(--color-surface) !important;
+    box-shadow: none !important;
+    transition: all var(--transition-fast);
+    text-decoration: none !important;
+}
+
+.dt-paging .dt-paging-button:hover:not(.disabled) {
+    border-color: var(--color-accent) !important;
+    background: var(--color-accent-soft) !important;
+    color: var(--color-accent) !important;
+}
+
+.dt-paging .dt-paging-button.current,
+.dt-paging .dt-paging-button.current:hover {
+    border-color: var(--color-accent) !important;
+    background: var(--color-accent-soft) !important;
+    color: var(--color-accent-strong) !important;
+    font-weight: var(--font-weight-semibold);
+}
+
+.dt-paging .dt-paging-button.disabled,
+.dt-paging .dt-paging-button.disabled:hover {
+    opacity: 0.4;
+    cursor: not-allowed;
+    color: var(--color-text-muted) !important;
+    background: var(--color-surface) !important;
+    border-color: var(--color-border) !important;
+}
+
+/* ── ColVis button ───────────────────────────────────────────────────────── */
+
+div.dt-buttons {
+    margin-bottom: var(--space-3);
+}
+
+div.dt-button-collection {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    padding: var(--space-2);
+}
+
+div.dt-button-collection button.dt-button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: var(--space-2) var(--space-3);
+    font-family: var(--font-secondary);
+    font-size: var(--text-sm);
+    color: var(--color-text);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+div.dt-button-collection button.dt-button:hover {
+    background: var(--color-surface-muted);
+}
+
+div.dt-button-collection button.dt-button.dt-button-active {
+    color: var(--color-accent);
+    font-weight: var(--font-weight-semibold);
+}

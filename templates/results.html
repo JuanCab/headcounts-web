@@ -114,8 +114,8 @@
                 targets: '_all',
                 render: function (data) { return data === null || data === undefined ? '' : data; }
             }],
-            pageLength: 25,
-            lengthMenu: [25, 50, 100, 250],
+            pageLength: 100,
+            lengthMenu: [[100, 250, 500, -1], [100, 250, 500, 'All']],
             order: [],
             language: {
                 info: 'Showing _START_-_END_ of _TOTAL_ rows',

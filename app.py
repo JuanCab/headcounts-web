@@ -123,7 +123,7 @@ def data_view(subject, spec1=None, spec2=None):
     params = request.form if request.method == 'POST' else request.args
     draw = int(params.get('draw', 1))
     start = int(params.get('start', 0))
-    length = int(params.get('length', 25))
+    length = int(params.get('length', 100))
     search_value = params.get('search[value]', '').strip().lower()
     order_col_idx = int(params.get('order[0][column]', -1))
     order_dir = params.get('order[0][dir]', 'asc')
@@ -153,7 +153,7 @@ def data_view(subject, spec1=None, spec2=None):
                 return (1, text)
         rows.sort(key=_sort_key, reverse=(order_dir == 'desc'))
 
-    page_rows = rows[start:start + length]
+    page_rows = rows[start:] if length == -1 else rows[start:start + length]
 
     return Response(
         json.dumps({

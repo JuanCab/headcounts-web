@@ -6,6 +6,7 @@ data
 old_code
 test_script
 test_ipython.txt
+Developer-Reference.md
 .flask_secret_key
 .env
 /private

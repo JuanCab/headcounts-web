@@ -60,4 +60,4 @@ BACKUP_DIR = 'backups/'
 SEMESTER_PY = 'config_terms.py'
 
 # Default term for the application
-DEFAULT_TERM = (20273, 'Fall 2026')
+DEFAULT_TERM = (20275, "Spring 2027")

@@ -141,9 +141,13 @@ def filter_data(tbl, subject, spec1=None, spec2=None):
         # after filtering out 'all' and Nones
         specs = [s.lower() for s in [spec1, spec2] if s and s.lower() != 'all']
 
+    # An explicit 'all' in either spec means "all terms", so it must
+    # not fall through to the default-term filter below.
+    all_terms = any(s and s.lower() == 'all' for s in (spec1, spec2))
+
     # If no specific specs are provided and the subject is not 'all',
     # and not 'any' subject, then filter by the most recent year/term
-    if not specs and subject not in ['all', 'any']:
+    if not specs and not all_terms and subject not in ['all', 'any']:
         # Identify the default year/term in the dataset.
         most_recent = DEFAULT_TERM[0]
 
@@ -694,6 +698,10 @@ def build_url(form):
                 subject_or_college and subject_or_college != "all")
         ):
             parts.append(term)
+    elif parts and parts[0] != "all":
+        # "All Terms" has an empty value. Without an explicit 'all' the
+        # route would fall back to the default term.
+        parts.append("all")
 
     # 3) Class code (if provided)
     if class_code:
